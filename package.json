@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "hyvmind-uploader",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Upload Obsidian folders to Hyvmind ICP app as source graphs.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -10,8 +10,8 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},
-	"keywords": [],
-	"license": "0-BSD",
+	"keywords": ["obsidian", "plugin", "icp", "hyvmind"],
+	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
@@ -24,6 +24,8 @@
 		"jiti": "2.6.1"
 	},
 	"dependencies": {
-		"obsidian": "latest"
+		"obsidian": "latest",
+		"@icp-sdk/auth": "^5.0.0",
+		"@icp-sdk/core": "^5.0.0"
 	}
 }

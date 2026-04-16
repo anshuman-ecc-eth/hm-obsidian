@@ -1,36 +1,116 @@
-import {App, PluginSettingTab, Setting} from "obsidian";
-import MyPlugin from "./main";
+import { App, PluginSettingTab, Setting } from "obsidian";
+import HyvmindPlugin from "../main";
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface HyvmindSettings {
+  /** Canister ID for the Hyvmind backend */
+  canisterId: string;
+  /** Internet Identity URL (local or mainnet) */
+  identityProviderUrl: string;
+  /** ICP network host (optional, defaults to mainnet) */
+  host: string;
+  /** User's display name for Hyvmind */
+  userName: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+export const DEFAULT_SETTINGS: HyvmindSettings = {
+  canisterId: "019b8930-ebee-7341-a82a-915c8016db5d",
+  identityProviderUrl: "https://id.ai",
+  host: "https://icp-api.io",
+  userName: "",
+};
 
-export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+export class HyvmindSettingTab extends PluginSettingTab {
+  plugin: HyvmindPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+  constructor(app: App, plugin: HyvmindPlugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
 
-	display(): void {
-		const {containerEl} = this;
+  display(): void {
+    const { containerEl } = this;
 
-		containerEl.empty();
+    containerEl.empty();
 
-		new Setting(containerEl)
-			.setName('Settings #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
+    containerEl.createEl("h2", { text: "Hyvmind Uploader Settings" });
+
+    // Canister ID setting
+    new Setting(containerEl)
+      .setName("Canister ID")
+      .setDesc("The canister ID of the Hyvmind backend")
+      .addText((text) =>
+        text
+          .setPlaceholder("Enter canister ID")
+          .setValue(this.plugin.settings.canisterId)
+          .onChange(async (value) => {
+            this.plugin.settings.canisterId = value.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Identity Provider URL setting
+    new Setting(containerEl)
+      .setName("Identity Provider URL")
+      .setDesc("Internet Identity URL (use http://id.ai.localhost:8000 for local development)")
+      .addText((text) =>
+        text
+          .setPlaceholder("https://id.ai")
+          .setValue(this.plugin.settings.identityProviderUrl)
+          .onChange(async (value) => {
+            this.plugin.settings.identityProviderUrl = value.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Host setting
+    new Setting(containerEl)
+      .setName("ICP Host")
+      .setDesc("ICP network host (use http://localhost:8000 for local development)")
+      .addText((text) =>
+        text
+          .setPlaceholder("https://icp-api.io")
+          .setValue(this.plugin.settings.host)
+          .onChange(async (value) => {
+            this.plugin.settings.host = value.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // User Name setting
+    new Setting(containerEl)
+      .setName("Display Name")
+      .setDesc("Your display name for Hyvmind (will be used when creating your user profile)")
+      .addText((text) =>
+        text
+          .setPlaceholder("Enter your name")
+          .setValue(this.plugin.settings.userName)
+          .onChange(async (value) => {
+            this.plugin.settings.userName = value.trim();
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // Info section
+    containerEl.createEl("h3", { text: "Environment Presets" });
+    
+    const presetContainer = containerEl.createDiv();
+    presetContainer.style.marginTop = "1rem";
+    
+    const mainnetBtn = presetContainer.createEl("button", { text: "Use Mainnet" });
+    mainnetBtn.style.marginRight = "0.5rem";
+    mainnetBtn.addEventListener("click", async () => {
+      this.plugin.settings.identityProviderUrl = "https://id.ai";
+      this.plugin.settings.host = "https://icp-api.io";
+      await this.plugin.saveSettings();
+      this.display(); // Refresh UI
+    });
+
+    const localBtn = presetContainer.createEl("button", { text: "Use Local" });
+    localBtn.addEventListener("click", async () => {
+      this.plugin.settings.identityProviderUrl = "http://id.ai.localhost:8000";
+      this.plugin.settings.host = "http://localhost:8000";
+      await this.plugin.saveSettings();
+      this.display(); // Refresh UI
+    });
+  }
 }

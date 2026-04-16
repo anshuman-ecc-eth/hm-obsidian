@@ -1,99 +1,319 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+/**
+ * Hyvmind Uploader Plugin for Obsidian
+ * Uploads folders to Hyvmind ICP app as source graphs
+ */
 
-// Remember to rename these classes and interfaces!
+import {
+  Plugin,
+  TFolder,
+  Notice,
+  Menu,
+  Modal,
+  App,
+  Setting,
+  ButtonComponent,
+} from "obsidian";
+import { HyvmindSettings, DEFAULT_SETTINGS, HyvmindSettingTab } from "./settings";
+import { ICPAuth } from "./icp/auth";
+import { ICPAgent } from "./icp/agent";
+import { FolderUploader } from "./icp/uploader";
+import { ConnectionStatusBar } from "./ui/status-bar";
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class HyvmindPlugin extends Plugin {
+  settings: HyvmindSettings;
+  auth: ICPAuth;
+  agent: ICPAgent;
+  uploader: FolderUploader;
+  statusBar: ConnectionStatusBar;
 
-	async onload() {
-		await this.loadSettings();
+  async onload() {
+    await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+    // Initialize ICP modules
+    this.auth = new ICPAuth(this.settings.identityProviderUrl);
+    this.agent = new ICPAgent(this.settings.canisterId, this.settings.host);
+    this.uploader = new FolderUploader(this.app.vault, this.agent);
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+    // Initialize auth client
+    await this.auth.init();
+    if (this.auth.isAuthenticated()) {
+      const identity = this.auth.getIdentity();
+      if (identity) {
+        await this.agent.createAuthenticatedActor(identity);
+      }
+    }
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+    // Add settings tab
+    this.addSettingTab(new HyvmindSettingTab(this.app, this));
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
-		});
+    // Add status bar
+    const statusBarItem = this.addStatusBarItem();
+    this.statusBar = new ConnectionStatusBar(statusBarItem);
+    this.updateStatusBar();
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+    // Add ribbon icon
+    this.addRibbonIcon("upload-cloud", "Hyvmind Uploader", () => {
+      this.showConnectOrUploadMenu();
+    });
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
+    // Register commands
+    this.addCommand({
+      id: "connect-to-icp",
+      name: "Connect to ICP",
+      callback: () => this.connectToICP(),
+    });
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+    this.addCommand({
+      id: "disconnect-from-icp",
+      name: "Disconnect from ICP",
+      callback: () => this.disconnectFromICP(),
+    });
 
-	}
+    this.addCommand({
+      id: "upload-current-folder",
+      name: "Upload current folder to Hyvmind",
+      checkCallback: (checking: boolean) => {
+        const file = this.app.workspace.getActiveFile();
+        if (file) {
+          if (!checking) {
+            const folder = file.parent;
+            if (folder) {
+              this.uploadFolder(folder);
+            }
+          }
+          return true;
+        }
+        return false;
+      },
+    });
 
-	onunload() {
-	}
+    // Register folder context menu
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu: Menu, folder: TFolder) => {
+        if (folder instanceof TFolder) {
+          menu.addItem((item) => {
+            item
+              .setTitle("Upload to Hyvmind")
+              .setIcon("upload-cloud")
+              .onClick(() => this.uploadFolder(folder));
+          });
+        }
+      })
+    );
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
-	}
+    console.log("Hyvmind Uploader plugin loaded");
+  }
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
+  onunload() {
+    console.log("Hyvmind Uploader plugin unloaded");
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
+
+    // Update ICP modules with new settings
+    this.auth.setIdentityProviderUrl(this.settings.identityProviderUrl);
+    this.agent.updateConfig(this.settings.canisterId, this.settings.host);
+  }
+
+  /**
+   * Connect to ICP with Internet Identity
+   */
+  private async connectToICP(): Promise<void> {
+    try {
+      new Notice("Opening Internet Identity...");
+
+      const identity = await this.auth.login();
+      await this.agent.createAuthenticatedActor(identity);
+
+      // Initialize access control if needed
+      try {
+        await this.agent.initializeAccessControl();
+      } catch (e) {
+        // Already initialized, ignore
+      }
+
+      // Save user profile if name is set
+      if (this.settings.userName) {
+        try {
+          await this.agent.saveUserProfile(this.settings.userName);
+        } catch (e) {
+          // Profile may already exist, ignore
+        }
+      }
+
+      this.updateStatusBar();
+      new Notice("Connected to ICP successfully!");
+    } catch (error) {
+      console.error("Connection failed:", error);
+      new Notice(`Connection failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Disconnect from ICP
+   */
+  private async disconnectFromICP(): Promise<void> {
+    await this.auth.logout();
+    this.agent.updateConfig(this.settings.canisterId, this.settings.host);
+    this.updateStatusBar();
+    new Notice("Disconnected from ICP");
+  }
+
+  /**
+   * Upload a folder to Hyvmind
+   */
+  private async uploadFolder(folder: TFolder): Promise<void> {
+    // Check if authenticated
+    if (!this.auth.isAuthenticated()) {
+      new Notice("Please connect to ICP first");
+      await this.connectToICP();
+      return;
+    }
+
+    // Show progress modal
+    const progressModal = new UploadProgressModal(this.app, folder.name);
+    progressModal.open();
+
+    try {
+      const result = await this.uploader.uploadFolder(folder, (progress) => {
+        progressModal.updateProgress(progress);
+      });
+
+      progressModal.close();
+
+      if (result.success) {
+        new Notice(`✓ ${result.message}`);
+      } else {
+        new Notice(`✗ ${result.message}`);
+      }
+    } catch (error) {
+      progressModal.close();
+      console.error("Upload failed:", error);
+      new Notice(`Upload failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Update status bar display
+   */
+  private updateStatusBar(): void {
+    if (this.auth.isAuthenticated()) {
+      const principal = this.auth.getPrincipal()?.toText() || null;
+      this.statusBar.setConnected(principal);
+    } else {
+      this.statusBar.setDisconnected();
+    }
+  }
+
+  /**
+   * Show connect or upload menu
+   */
+  private showConnectOrUploadMenu(): void {
+    const menu = new Menu();
+
+    if (!this.auth.isAuthenticated()) {
+      menu.addItem((item) =>
+        item
+          .setTitle("Connect to ICP")
+          .setIcon("log-in")
+          .onClick(() => this.connectToICP())
+      );
+    } else {
+      menu.addItem((item) =>
+        item
+          .setTitle("Disconnect from ICP")
+          .setIcon("log-out")
+          .onClick(() => this.disconnectFromICP())
+      );
+
+      menu.addSeparator();
+
+      menu.addItem((item) =>
+        item
+          .setTitle("Upload current folder")
+          .setIcon("upload-cloud")
+          .onClick(() => {
+            const file = this.app.workspace.getActiveFile();
+            if (file && file.parent) {
+              this.uploadFolder(file.parent);
+            } else {
+              new Notice("No folder selected");
+            }
+          })
+      );
+    }
+
+    menu.showAtPosition({ x: 0, y: 0 });
+  }
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+/**
+ * Upload progress modal
+ */
+class UploadProgressModal extends Modal {
+  private folderName: string;
+  private progressEl: HTMLElement;
+  private statusEl: HTMLElement;
 
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
+  constructor(app: App, folderName: string) {
+    super(app);
+    this.folderName = folderName;
+  }
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+
+    contentEl.createEl("h2", { text: `Uploading to Hyvmind` });
+    contentEl.createEl("p", { text: `Folder: ${this.folderName}` });
+
+    this.statusEl = contentEl.createEl("p", {
+      text: "Initializing...",
+      cls: "hyvmind-upload-status",
+    });
+
+    this.progressEl = contentEl.createEl("div", {
+      cls: "hyvmind-progress-bar",
+    });
+
+    // Add some basic styling
+    this.progressEl.style.width = "100%";
+    this.progressEl.style.height = "20px";
+    this.progressEl.style.backgroundColor = "var(--background-modifier-border)";
+    this.progressEl.style.borderRadius = "4px";
+    this.progressEl.style.overflow = "hidden";
+    this.progressEl.style.marginTop = "1rem";
+
+    const progressFill = this.progressEl.createEl("div");
+    progressFill.style.width = "0%";
+    progressFill.style.height = "100%";
+    progressFill.style.backgroundColor = "var(--interactive-accent)";
+    progressFill.style.transition = "width 0.3s ease";
+    progressFill.id = "hyvmind-progress-fill";
+  }
+
+  updateProgress(progress: {
+    totalFiles: number;
+    processedFiles: number;
+    currentFile: string;
+    stage: string;
+  }): void {
+    this.statusEl.setText(`${progress.stage}: ${progress.currentFile}`);
+
+    const fill = document.getElementById("hyvmind-progress-fill");
+    if (fill && progress.totalFiles > 0) {
+      const percentage = (progress.processedFiles / progress.totalFiles) * 100;
+      fill.style.width = `${percentage}%`;
+    }
+  }
+
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
 }
