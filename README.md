@@ -149,7 +149,7 @@ src/
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details
+0BSD License - See [LICENSE](LICENSE) for details
 
 ## Support
 
