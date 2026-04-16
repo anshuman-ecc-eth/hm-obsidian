@@ -3,7 +3,7 @@
 	"name": "Hyvmind Uploader",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Upload Obsidian folders to Hyvmind ICP app as source graphs.",
+	"description": "Upload folders to Hyvmind ICP app as source graphs.",
 	"author": "Hyvmind",
 	"authorUrl": "https://hyvmind.app",
 	"isDesktopOnly": false
