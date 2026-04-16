@@ -101,11 +101,11 @@ export default class HyvmindPlugin extends Plugin {
       })
     );
 
-    console.log("Hyvmind Uploader plugin loaded");
+    // Plugin loaded - no console logging in production (per Obsidian guidelines)
   }
 
   onunload() {
-    console.log("Hyvmind Uploader plugin unloaded");
+    // Plugin unloaded - cleanup handled by register* methods
   }
 
   async loadSettings() {
@@ -150,7 +150,7 @@ export default class HyvmindPlugin extends Plugin {
       new Notice("Connected to ICP successfully!");
     } catch (error) {
       console.error("Connection failed:", error);
-      new Notice(`Connection failed: ${error instanceof Error ? error.message : String(error)}`);
+      new Notice(`Connection failed: ${this.sanitizeForNotice(error instanceof Error ? error.message : String(error))}`);
     }
   }
 
@@ -194,7 +194,7 @@ export default class HyvmindPlugin extends Plugin {
     } catch (error) {
       progressModal.close();
       console.error("Upload failed:", error);
-      new Notice(`Upload failed: ${error instanceof Error ? error.message : String(error)}`);
+      new Notice(`Upload failed: ${this.sanitizeForNotice(error instanceof Error ? error.message : String(error))}`);
     }
   }
 
@@ -208,6 +208,16 @@ export default class HyvmindPlugin extends Plugin {
     } else {
       this.statusBar.setDisconnected();
     }
+  }
+
+  /**
+   * Sanitize text for display in Notices to prevent XSS
+   */
+  private sanitizeForNotice(text: string): string {
+    // Remove HTML tags and limit length
+    return text
+      .replace(/<[^>]*>/g, "") // Remove HTML tags
+      .slice(0, 200); // Limit length
   }
 
   /**
@@ -276,25 +286,23 @@ class UploadProgressModal extends Modal {
       text: "Initializing...",
       cls: "hyvmind-upload-status",
     });
+    // Accessibility: Live region for screen readers
+    this.statusEl.setAttribute("aria-live", "polite");
+    this.statusEl.setAttribute("aria-atomic", "true");
 
     this.progressEl = contentEl.createEl("div", {
       cls: "hyvmind-progress-bar",
     });
 
-    // Add some basic styling
-    this.progressEl.style.width = "100%";
-    this.progressEl.style.height = "20px";
-    this.progressEl.style.backgroundColor = "var(--background-modifier-border)";
-    this.progressEl.style.borderRadius = "4px";
-    this.progressEl.style.overflow = "hidden";
-    this.progressEl.style.marginTop = "1rem";
-
-    const progressFill = this.progressEl.createEl("div");
-    progressFill.style.width = "0%";
-    progressFill.style.height = "100%";
-    progressFill.style.backgroundColor = "var(--interactive-accent)";
-    progressFill.style.transition = "width 0.3s ease";
-    progressFill.id = "hyvmind-progress-fill";
+    // Accessibility: Progress bar with ARIA attributes
+    const progressFill = this.progressEl.createEl("div", {
+      cls: "hyvmind-progress-fill",
+    });
+    progressFill.setAttribute("role", "progressbar");
+    progressFill.setAttribute("aria-valuenow", "0");
+    progressFill.setAttribute("aria-valuemin", "0");
+    progressFill.setAttribute("aria-valuemax", "100");
+    progressFill.setAttribute("aria-label", "Upload progress");
   }
 
   updateProgress(progress: {
@@ -305,10 +313,13 @@ class UploadProgressModal extends Modal {
   }): void {
     this.statusEl.setText(`${progress.stage}: ${progress.currentFile}`);
 
-    const fill = document.getElementById("hyvmind-progress-fill");
+    // Use scoped querySelector instead of global getElementById
+    const fill = this.progressEl.querySelector(".hyvmind-progress-fill");
     if (fill && progress.totalFiles > 0) {
       const percentage = (progress.processedFiles / progress.totalFiles) * 100;
-      fill.style.width = `${percentage}%`;
+      (fill as HTMLElement).style.width = `${percentage}%`;
+      // Update ARIA value for accessibility
+      fill.setAttribute("aria-valuenow", Math.round(percentage).toString());
     }
   }
 

@@ -32,7 +32,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Hyvmind Uploader Settings" });
+    containerEl.createEl("h2", { text: "Settings" });
 
     // Canister ID setting
     new Setting(containerEl)
@@ -91,22 +91,26 @@ export class HyvmindSettingTab extends PluginSettingTab {
       );
 
     // Info section
-    containerEl.createEl("h3", { text: "Environment Presets" });
-    
-    const presetContainer = containerEl.createDiv();
-    presetContainer.style.marginTop = "1rem";
-    
-    const mainnetBtn = presetContainer.createEl("button", { text: "Use Mainnet" });
-    mainnetBtn.style.marginRight = "0.5rem";
-    mainnetBtn.addEventListener("click", async () => {
+    containerEl.createEl("h3", { text: "Environment presets" });
+
+    const presetContainer = containerEl.createDiv({ cls: "hyvmind-preset-container" });
+
+    const mainnetBtn = presetContainer.createEl("button", {
+      text: "Use Mainnet",
+      cls: "hyvmind-preset-btn",
+    });
+    this.plugin.registerDomEvent(mainnetBtn, "click", async () => {
       this.plugin.settings.identityProviderUrl = "https://id.ai";
       this.plugin.settings.host = "https://icp-api.io";
       await this.plugin.saveSettings();
       this.display(); // Refresh UI
     });
 
-    const localBtn = presetContainer.createEl("button", { text: "Use Local" });
-    localBtn.addEventListener("click", async () => {
+    const localBtn = presetContainer.createEl("button", {
+      text: "Use Local",
+      cls: "hyvmind-preset-btn",
+    });
+    this.plugin.registerDomEvent(localBtn, "click", async () => {
       this.plugin.settings.identityProviderUrl = "http://id.ai.localhost:8000";
       this.plugin.settings.host = "http://localhost:8000";
       await this.plugin.saveSettings();

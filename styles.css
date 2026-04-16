@@ -1,8 +1,81 @@
 /*
+ * Hyvmind Uploader Plugin Styles
+ * These styles are available when the plugin is enabled
+ */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* ========================================
+   Progress Modal Styles
+   ======================================== */
 
-If your plugin does not need CSS, delete this file.
+.hyvmind-upload-status {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
 
-*/
+.hyvmind-progress-bar {
+  width: 100%;
+  height: 20px;
+  background-color: var(--background-modifier-border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.hyvmind-progress-bar .hyvmind-progress-fill {
+  width: 0%;
+  height: 100%;
+  background-color: var(--interactive-accent);
+  transition: width 0.3s ease;
+}
+
+/* ========================================
+   Status Bar Styles
+   ======================================== */
+
+.hyvmind-status-bar {
+  font-size: var(--font-ui-smaller);
+}
+
+.hyvmind-status-connected {
+  color: var(--text-success);
+}
+
+.hyvmind-status-disconnected {
+  color: var(--text-muted);
+}
+
+/* ========================================
+   Settings Tab Styles
+   ======================================== */
+
+.hyvmind-preset-container {
+  margin-top: 1rem;
+}
+
+.hyvmind-preset-btn {
+  margin-right: 0.5rem;
+}
+
+/* Focus styles for accessibility */
+.hyvmind-preset-btn:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .hyvmind-progress-bar {
+    border: 1px solid var(--text-normal);
+  }
+
+  .hyvmind-progress-bar .hyvmind-progress-fill {
+    border-right: 1px solid var(--text-normal);
+  }
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .hyvmind-progress-bar .hyvmind-progress-fill {
+    transition: none;
+  }
+}

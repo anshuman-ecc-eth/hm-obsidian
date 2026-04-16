@@ -43,12 +43,14 @@ export class ConnectionStatusBar {
       const shortPrincipal = `${this.principal.slice(0, 8)}...${this.principal.slice(-4)}`;
       this.element.setText(`🟢 Hyvmind: ${shortPrincipal}`);
       this.element.title = `Connected as ${this.principal}`;
-      this.element.style.color = "var(--text-success)";
+      this.element.addClass("hyvmind-status-connected");
+      this.element.removeClass("hyvmind-status-disconnected");
     } else {
       // Show disconnected status
       this.element.setText("⚪ Hyvmind: Not connected");
       this.element.title = "Click 'Connect to ICP' command to authenticate";
-      this.element.style.color = "var(--text-muted)";
+      this.element.addClass("hyvmind-status-disconnected");
+      this.element.removeClass("hyvmind-status-connected");
     }
   }
 
