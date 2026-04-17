@@ -4,7 +4,7 @@ Upload Obsidian folders to [Hyvmind](https://hyvmind.app) ICP app as source grap
 
 ## Features
 
-- **Internet Identity Authentication** - Secure login using Internet Identity with 8-hour session expiry
+- **Internet Identity Authentication** - Secure login using delegation tokens with configurable expiry (1, 7, or 30 days)
 - **Folder Upload** - Right-click any folder to upload to Hyvmind as a source graph
 - **Recursive Scanning** - Includes all subfolders and markdown files
 - **Smart Mapping** - Converts folder structure to Hyvmind's graph format:
@@ -49,13 +49,53 @@ Open **Settings → Hyvmind Uploader** to configure:
 
 Use the **Environment Presets** buttons to quickly switch between mainnet and local configurations.
 
+## Authentication
+
+This plugin uses **manual token-based authentication** because Obsidian's embedded browser cannot open the system browser for security reasons.
+
+### How to Authenticate
+
+1. **Open https://id.ai in your system browser** (Chrome, Firefox, Safari, Edge - not inside Obsidian)
+
+2. **Sign in** with your passkey, Apple, Google, or Microsoft account
+
+3. **Get your delegation token:**
+   - Open Developer Tools (F12 or Cmd+Option+I)
+   - Go to the **Application** tab (or **Storage** tab in some browsers)
+   - Find **IndexedDB** in the left sidebar
+   - Look for a database named something like `identity` or `dfinity...`
+   - Open the database and find the **info** object store
+   - Find the key named `delegation` and copy its value
+
+   **Or use the console method:**
+   - Open https://id.ai in your browser and sign in
+   - Open Developer Tools → Console
+   - Run this code and copy the result:
+   ```javascript
+   navigator余storage.getItem('delegation').then(console.log)
+   ```
+
+4. **Import the token in Obsidian:**
+   - Go to **Settings → Hyvmind Uploader**
+   - Paste the token JSON into the **Delegation token** field
+   - Click **Import token**
+   - Choose your **Token expiry** preference (1 day, 7 days, or 30 days)
+
+5. The token status will show "Valid" with the expiry date
+
+### Token Expiry Options
+
+| Option | Recommended For |
+|--------|----------------|
+| 1 day | High security environments |
+| 7 days | Default - balance of security and convenience |
+| 30 days | Lower security tolerance, maximum convenience |
+
+### Deleting Your Token
+
+Click **Delete token** in the settings to remove your authentication. You will need to re-authenticate to use the plugin again.
+
 ## Usage
-
-### Connect to ICP
-
-1. Click the **cloud upload icon** in the left ribbon, or
-2. Use command palette: **"Hyvmind Uploader: Connect to ICP"**
-3. Complete Internet Identity authentication in the popup
 
 ### Upload a Folder
 
@@ -80,7 +120,7 @@ The status bar at the bottom shows:
 ## Requirements
 
 - Obsidian v0.15.0 or higher
-- Internet Identity for authentication
+- Internet Identity for authentication (from https://id.ai)
 - Connection to Internet Computer (mainnet or local)
 
 ## Development
@@ -130,11 +170,12 @@ src/
 ├── main.ts              # Plugin entry point
 ├── settings.ts          # Settings UI
 ├── icp/
-│   ├── auth.ts         # Internet Identity auth
+│   ├── auth.ts         # Internet Identity auth (token-based)
 │   ├── agent.ts        # ICP agent/actor
 │   └── uploader.ts     # Folder-to-graph conversion
 ├── ui/
-│   └── status-bar.ts   # Connection indicator
+│   ├── status-bar.ts   # Connection indicator
+│   └── token-modal.ts  # Token import instructions
 └── types/
     └── canister.ts     # Candid types
 ```
