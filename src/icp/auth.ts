@@ -1,103 +1,169 @@
 /**
  * Internet Identity authentication module
- * Handles login/logout using @icp-sdk/auth
+ * Handles login/logout and manual token import/export
  */
 
 import { AuthClient } from "@icp-sdk/auth/client";
 import { Identity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
-import { Notice } from "obsidian";
 
-const DEFAULT_MAX_TIME_TO_LIVE = BigInt(8) * BigInt(3_600_000_000_000);
+const KEY_IDENTITY = "identity";
+const KEY_DELEGATION = "delegation";
 
-export interface AuthState {
-  client: AuthClient | null;
-  identity: Identity | null;
-  principal: Principal | null;
-  isAuthenticated: boolean;
+interface AuthClientStorage {
+  get(key: string): Promise<unknown>;
+  set(key: string, value: unknown): Promise<void>;
+  remove(key: string): Promise<void>;
+}
+
+export interface TokenInfo {
+  valid: boolean;
+  expiry: Date | null;
+  principal: string | null;
+  isExpired: boolean;
+}
+
+export interface TokenStorage {
+  getDelegationToken(): string | null;
+  setDelegationToken(token: string): void;
+  clearDelegationToken(): void;
 }
 
 export class ICPAuth {
-  private state: AuthState = {
-    client: null,
-    identity: null,
-    principal: null,
-    isAuthenticated: false,
-  };
-
+  private client: AuthClient | null = null;
+  private identity: Identity | null = null;
+  private principal: Principal | null = null;
+  private isAuthenticatedFlag = false;
   private identityProviderUrl: string;
+  private storage: TokenStorage;
 
-  constructor(identityProviderUrl: string) {
+  constructor(identityProviderUrl: string, storage: TokenStorage) {
     this.identityProviderUrl = identityProviderUrl;
+    this.storage = storage;
   }
 
   async init(): Promise<void> {
-    this.state.client = await AuthClient.create();
+    const storedToken = this.storage.getDelegationToken();
 
-    const isAuthenticated = await this.state.client.isAuthenticated();
-    if (isAuthenticated) {
-      this.state.identity = this.state.client.getIdentity();
-      this.state.principal = this.state.identity.getPrincipal();
-      this.state.isAuthenticated = true;
-    }
-  }
+    if (storedToken) {
+      try {
+        const tokenData = JSON.parse(storedToken);
 
-  /**
-   * Login with Internet Identity
-   * Uses the standard AuthClient popup flow
-   */
-  async login(): Promise<Identity> {
-    if (!this.state.client) {
-      throw new Error("AuthClient not initialized");
-    }
+        const customStorage: AuthClientStorage = {
+          get: async (key: string) => {
+            if (key === KEY_DELEGATION) {
+              return tokenData;
+            }
+            return null;
+          },
+          set: async () => {},
+          remove: async () => {},
+        };
 
-    return new Promise((resolve, reject) => {
-      this.state.client!.login({
-        identityProvider: this.identityProviderUrl,
-        maxTimeToLive: DEFAULT_MAX_TIME_TO_LIVE,
-        onSuccess: () => {
-          const identity = this.state.client!.getIdentity();
-          const principal = identity.getPrincipal();
+        this.client = await AuthClient.create({ storage: customStorage });
 
-          if (principal.toText() === "2vxsx-fae") {
-            reject(new Error("Authentication failed: anonymous principal"));
-            return;
-          }
-
-          this.state.identity = identity;
-          this.state.principal = principal;
-          this.state.isAuthenticated = true;
-
-          resolve(identity);
-        },
-        onError: (error) => {
-          reject(new Error(`Login failed: ${error}`));
-        },
-      });
-    });
-  }
-
-  async logout(): Promise<void> {
-    if (!this.state.client) {
-      return;
+        const isAuth = await this.client.isAuthenticated();
+        if (isAuth) {
+          this.identity = this.client.getIdentity();
+          this.principal = this.identity.getPrincipal();
+          this.isAuthenticatedFlag = true;
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to restore token, will need to re-import:", err);
+      }
     }
 
-    await this.state.client.logout();
-    this.state.identity = null;
-    this.state.principal = null;
-    this.state.isAuthenticated = false;
+    this.client = await AuthClient.create();
   }
 
-  getIdentity(): Identity | null {
-    return this.state.identity;
+  async importDelegationToken(tokenJson: string): Promise<Identity> {
+    const parsed = JSON.parse(tokenJson);
+
+    if (!parsed || !parsed.delegations) {
+      throw new Error("Invalid delegation token format");
+    }
+
+    this.storage.setDelegationToken(tokenJson);
+
+    const customStorage: AuthClientStorage = {
+      get: async (key: string) => {
+        if (key === KEY_DELEGATION) {
+          return parsed;
+        }
+        return null;
+      },
+      set: async () => {},
+      remove: async () => {},
+    };
+
+    this.client = await AuthClient.create({ storage: customStorage });
+
+    const isAuth = await this.client.isAuthenticated();
+    if (!isAuth) {
+      throw new Error("Failed to authenticate with provided token");
+    }
+
+    this.identity = this.client.getIdentity();
+    this.principal = this.identity.getPrincipal();
+    this.isAuthenticatedFlag = true;
+
+    return this.identity;
   }
 
-  getPrincipal(): Principal | null {
-    return this.state.principal;
+  getTokenInfo(): TokenInfo {
+    if (!this.client || !this.principal) {
+      return {
+        valid: false,
+        expiry: null,
+        principal: null,
+        isExpired: true,
+      };
+    }
+
+    let expiry: Date | null = null;
+    let isExpired = true;
+
+    try {
+      const chain = (this.client as any)._chain;
+      if (chain && chain.delegations && chain.delegations.length > 0) {
+        const lastDel = chain.delegations[chain.delegations.length - 1];
+        const expirationNs = lastDel.delegation.expiration;
+        expiry = new Date(Number(expirationNs / BigInt(1_000_000)));
+        isExpired = expiry < new Date();
+      }
+    } catch {
+      isExpired = true;
+    }
+
+    return {
+      valid: this.isAuthenticatedFlag && !isExpired,
+      expiry,
+      principal: this.principal.toText(),
+      isExpired,
+    };
   }
 
   isAuthenticated(): boolean {
-    return this.state.isAuthenticated;
+    return this.isAuthenticatedFlag;
+  }
+
+  getIdentity(): Identity | null {
+    return this.identity;
+  }
+
+  getPrincipal(): Principal | null {
+    return this.principal;
+  }
+
+  async logout(): Promise<void> {
+    if (this.client) {
+      await this.client.logout();
+    }
+    this.identity = null;
+    this.principal = null;
+    this.isAuthenticatedFlag = false;
+    this.storage.clearDelegationToken();
   }
 
   setIdentityProviderUrl(url: string): void {
