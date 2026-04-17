@@ -169,3 +169,20 @@ textarea.hyvmind-token-input {
   font-family: var(--font-mono);
   font-size: var(--font-ui-smaller);
 }
+
+/* ========================================
+   Token Modal Styles
+   ======================================== */
+
+.hyvmind-code-block {
+  background-color: var(--background-secondary);
+  padding: 0.5rem;
+  border-radius: var(--radius-s);
+  font-family: var(--font-mono);
+  font-size: var(--font-ui-small);
+  overflow-x: auto;
+}
+
+.hyvmind-modal-close {
+  margin-top: 16px;
+}

@@ -7,13 +7,23 @@ import { AuthClient } from "@icp-sdk/auth/client";
 import { Identity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
 
-const KEY_IDENTITY = "identity";
 const KEY_DELEGATION = "delegation";
 
 interface AuthClientStorage {
   get(key: string): Promise<unknown>;
   set(key: string, value: unknown): Promise<void>;
   remove(key: string): Promise<void>;
+}
+
+interface DelegationInfo {
+  delegations: Array<{
+    delegation: {
+      pubkey: Uint8Array;
+      expiration: bigint;
+      targets?: Principal[];
+    };
+    signature: Uint8Array;
+  }>;
 }
 
 export interface TokenInfo {
@@ -125,7 +135,7 @@ export class ICPAuth {
     let isExpired = true;
 
     try {
-      const chain = (this.client as any)._chain;
+      const chain = (this.client as unknown as { _chain?: DelegationInfo })._chain;
       if (chain && chain.delegations && chain.delegations.length > 0) {
         const lastDel = chain.delegations[chain.delegations.length - 1];
         const expirationNs = lastDel.delegation.expiration;

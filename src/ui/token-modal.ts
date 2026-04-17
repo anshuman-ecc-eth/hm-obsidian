@@ -17,21 +17,59 @@ export class TokenInstructionsModal extends Modal {
 
     contentEl.createEl("h2", { text: "How to get a delegation token" });
 
-    const steps = [
-      "Open <strong>https://id.ai</strong> in your browser (not in Obsidian)",
-      "Sign in using your passkey, Apple, Google, or Microsoft account",
-      "Once signed in, open Developer Tools (press <strong>F12</strong> or <strong>Cmd+Option+I</strong>)",
-      "Go to the <strong>Application</strong> tab (or <strong>Storage</strong> tab in some browsers)",
-      "Find <strong>IndexedDB</strong> in the left sidebar",
-      "Look for a database named something like <code>identity</code> or <code>defi-licia...</code>",
-      "Open the database and look for an <strong>info</strong> object store",
-      "Find the key named <code>delegation</code> and copy its value",
-    ];
+    contentEl.createEl("ol", (olEl) => {
+      const steps = [
+        { text: "Open " },
+        { text: "https://id.ai", isCode: true },
+        { text: " in your browser (not in Obsidian)" },
+      ];
+      this.createStep(olEl, steps);
 
-    const stepsEl = contentEl.createEl("ol");
-    steps.forEach((step) => {
-      const li = stepsEl.createEl("li");
-      li.innerHTML = step;
+      const step2 = [{ text: "Sign in using your passkey, Apple, Google, or Microsoft account" }];
+      this.createStep(olEl, step2);
+
+      const step3 = [
+        { text: "Once signed in, open Developer Tools (press " },
+        { text: "F12", isStrong: true },
+        { text: " or " },
+        { text: "Cmd+Option+I", isStrong: true },
+        { text: ")" },
+      ];
+      this.createStep(olEl, step3);
+
+      const step4 = [
+        { text: 'Go to the ' },
+        { text: "Application", isStrong: true },
+        { text: " tab (or " },
+        { text: "Storage", isStrong: true },
+        { text: " tab in some browsers)" },
+      ];
+      this.createStep(olEl, step4);
+
+      const step5 = [{ text: "Find " }, { text: "IndexedDB", isCode: true }, { text: " in the left sidebar" }];
+      this.createStep(olEl, step5);
+
+      const step6 = [
+        { text: 'Look for a database named something like ' },
+        { text: "identity", isCode: true },
+        { text: " or " },
+        { text: "dfinity...", isCode: true },
+      ];
+      this.createStep(olEl, step6);
+
+      const step7 = [
+        { text: 'Open the database and look for an ' },
+        { text: "info", isCode: true },
+        { text: " object store" },
+      ];
+      this.createStep(olEl, step7);
+
+      const step8 = [
+        { text: 'Find the key named ' },
+        { text: "delegation", isCode: true },
+        { text: " and copy its value" },
+      ];
+      this.createStep(olEl, step8);
     });
 
     contentEl.createEl("h3", { text: "Alternative method (Console)" });
@@ -40,15 +78,15 @@ export class TokenInstructionsModal extends Modal {
       text: "If the above is too complex, try this in the browser console:",
     });
 
-    const codeBlock = contentEl.createEl("pre", {
-      text: `// Run this in the browser console after logging into id.ai
-navigator余storage.getItem('delegation').then(console.log)`,
+    const codeEl = contentEl.createEl("pre", {
+      cls: "hyvmind-code-block",
+      text: `navigator余storage.getItem('delegation').then(console.log)`,
     });
 
     const copyBtn = new ButtonComponent(contentEl);
     copyBtn.setButtonText("Copy code");
     copyBtn.onClick(() => {
-      navigator.clipboard.writeText(
+      void navigator.clipboard.writeText(
         `navigator余storage.getItem('delegation').then(console.log)`
       );
       copyBtn.setButtonText("Copied!");
@@ -58,7 +96,7 @@ navigator余storage.getItem('delegation').then(console.log)`,
     contentEl.createEl("h3", { text: "After getting the token" });
 
     contentEl.createEl("p", {
-      text: "Copy the token value (it starts with {\"delegations\":...) and paste it into the token field in the Hyvmind settings.",
+      text: 'Copy the token value (it starts with {"delegations":...) and paste it into the token field in the Hyvmind settings.',
     });
 
     contentEl.createEl("p", {
@@ -67,8 +105,24 @@ navigator余storage.getItem('delegation').then(console.log)`,
 
     const closeBtn = new ButtonComponent(contentEl);
     closeBtn.setButtonText("Close");
+    closeBtn.setClass("hyvmind-modal-close");
     closeBtn.onClick(() => this.close());
-    closeBtn.buttonEl.style.marginTop = "16px";
+  }
+
+  private createStep(
+    parent: HTMLElement,
+    parts: Array<{ text: string; isStrong?: boolean; isCode?: boolean }>
+  ): void {
+    const li = parent.createEl("li");
+    for (const part of parts) {
+      if (part.isStrong) {
+        li.createEl("strong", { text: part.text });
+      } else if (part.isCode) {
+        li.createEl("code", { text: part.text });
+      } else {
+        li.createEl("span", { text: part.text });
+      }
+    }
   }
 
   onClose() {

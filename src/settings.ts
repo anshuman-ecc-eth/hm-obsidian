@@ -2,7 +2,7 @@
  * Hyvmind plugin settings
  */
 
-import { App, PluginSettingTab, Setting, TextAreaComponent, Notice } from "obsidian";
+import { App, PluginSettingTab, Setting, TextAreaComponent, Notice, Modal, ButtonComponent } from "obsidian";
 import HyvmindPlugin from "../main";
 import { TokenInstructionsModal } from "./ui/token-modal";
 
@@ -26,6 +26,46 @@ export const DEFAULT_SETTINGS: HyvmindSettings = {
   principal: null,
 };
 
+class DeleteConfirmModal extends Modal {
+  private onConfirm: () => void;
+
+  constructor(app: App, onConfirm: () => void) {
+    super(app);
+    this.onConfirm = onConfirm;
+  }
+
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h3", { text: "Delete token?" });
+    contentEl.createEl("p", {
+      text: "You will need to re-authenticate to use the plugin again.",
+    });
+
+    const btnContainer = contentEl.createDiv();
+    btnContainer.style.display = "flex";
+    btnContainer.style.gap = "8px";
+
+    const cancelBtn = new ButtonComponent(btnContainer);
+    cancelBtn.setButtonText("Cancel");
+    cancelBtn.onClick(() => this.close());
+    cancelBtn.buttonEl.style.marginTop = "16px";
+
+    const deleteBtn = new ButtonComponent(btnContainer);
+    deleteBtn.setButtonText("Delete");
+    deleteBtn.setWarning();
+    deleteBtn.onClick(() => {
+      this.onConfirm();
+      this.close();
+    });
+    deleteBtn.buttonEl.style.marginTop = "16px";
+  }
+
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+}
+
 export class HyvmindSettingTab extends PluginSettingTab {
   plugin: HyvmindPlugin;
   private tokenInput!: TextAreaComponent;
@@ -42,7 +82,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    new Setting(containerEl).setHeading().setName("settings");
+    new Setting(containerEl).setHeading().setName("Settings");
 
     new Setting(containerEl)
       .setName("Canister ID")
@@ -96,16 +136,23 @@ export class HyvmindSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(containerEl).setHeading().setName("authentication");
+    new Setting(containerEl).setHeading().setName("Authentication");
 
     const authDescEl = containerEl.createEl("div", {
       cls: "hyvmind-auth-desc",
     });
-    authDescEl.innerHTML =
-      "To authenticate, you need a delegation token from Internet Identity. " +
-      "Since Obsidian cannot open the system browser directly, you must import a token manually. " +
-      '<a href="#">How to get a token?</a>';
-    authDescEl.querySelector("a")?.addEventListener("click", (e) => {
+    authDescEl.createEl("p", {
+      text: "To authenticate, you need a delegation token from Internet Identity.",
+    });
+    authDescEl.createEl("p", {
+      text: "Since Obsidian cannot open the system browser directly, you must import a token manually.",
+    });
+
+    const helpLink = authDescEl.createEl("a", {
+      href: "#",
+      text: "How to get a token?",
+    });
+    helpLink.addEventListener("click", (e) => {
       e.preventDefault();
       new TokenInstructionsModal(this.app).open();
     });
@@ -124,39 +171,26 @@ export class HyvmindSettingTab extends PluginSettingTab {
         this.tokenInput = ta;
       });
 
-    const btnContainer = containerEl.createEl("div", {
+    const btnContainer = containerEl.createDiv({
       cls: "hyvmind-auth-buttons",
     });
 
-    const importBtn = btnContainer.createEl("button", {
-      text: "Import token",
-      cls: "hyvmind-auth-btn hyvmind-import-btn",
-    });
-    importBtn.addEventListener("click", async () => {
+    const importBtn = new ButtonComponent(btnContainer);
+    importBtn.setButtonText("Import token");
+    importBtn.setCta();
+    importBtn.onClick(() => {
       const token = this.plugin.settings.delegationToken;
       if (!token) {
         new Notice("Please paste a delegation token first");
         return;
       }
-      try {
-        const identity = await this.plugin.auth.importDelegationToken(token);
-        const principal = identity.getPrincipal().toText();
-        this.plugin.settings.principal = principal;
-        await this.plugin.saveSettings();
-        await this.plugin.agent.createAuthenticatedActor(identity);
-        this.updateTokenStatus();
-        new Notice("Token imported successfully!");
-      } catch (err) {
-        new Notice(`Failed to import token: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      void this.handleImportToken();
     });
 
-    const helpBtn = btnContainer.createEl("button", {
-      text: "?",
-      cls: "hyvmind-auth-btn hyvmind-help-btn",
-      attr: { title: "How to get a token" },
-    });
-    helpBtn.addEventListener("click", () => {
+    const helpBtn = new ButtonComponent(btnContainer);
+    helpBtn.setButtonText("?");
+    helpBtn.setTooltip("How to get a token");
+    helpBtn.onClick(() => {
       new TokenInstructionsModal(this.app).open();
     });
 
@@ -175,54 +209,45 @@ export class HyvmindSettingTab extends PluginSettingTab {
         });
       });
 
-    new Setting(containerEl).setName("Token status").setDesc("Current authentication status");
+    new Setting(containerEl)
+      .setName("Token status")
+      .setDesc("Current authentication status");
 
     this.tokenStatusEl = containerEl.createEl("div", {
       cls: "hyvmind-token-status",
     });
     this.updateTokenStatus();
 
-    const deleteBtn = btnContainer.createEl("button", {
-      text: "Delete token",
-      cls: "hyvmind-auth-btn hyvmind-delete-btn",
-    });
-    deleteBtn.addEventListener("click", async () => {
+    const deleteBtn = new ButtonComponent(btnContainer);
+    deleteBtn.setButtonText("Delete token");
+    deleteBtn.setWarning();
+    deleteBtn.onClick(() => {
       if (!this.plugin.auth.isAuthenticated()) {
         new Notice("No token to delete");
         return;
       }
-      if (confirm("Are you sure you want to delete your token? You will need to re-authenticate.")) {
-        await this.plugin.auth.logout();
-        this.plugin.settings.delegationToken = "";
-        this.plugin.settings.principal = null;
-        await this.plugin.saveSettings();
-        this.tokenInput.setValue("");
-        this.updateTokenStatus();
-        new Notice("Token deleted");
-      }
+      new DeleteConfirmModal(this.app, () => {
+        void this.handleDeleteToken();
+      }).open();
     });
-    this.deleteBtn = deleteBtn;
+    this.deleteBtn = deleteBtn.buttonEl;
 
-    new Setting(containerEl).setHeading().setName("environment presets");
+    new Setting(containerEl).setHeading().setName("Environment presets");
 
     const presetContainer = containerEl.createDiv({ cls: "hyvmind-preset-container" });
 
-    const mainnetBtn = presetContainer.createEl("button", {
-      text: "Use mainnet",
-      cls: "hyvmind-preset-btn",
-    });
-    mainnetBtn.addEventListener("click", () => {
+    const mainnetBtn = new ButtonComponent(presetContainer);
+    mainnetBtn.setButtonText("Use mainnet");
+    mainnetBtn.onClick(() => {
       this.plugin.settings.identityProviderUrl = "https://id.ai";
       this.plugin.settings.host = "https://icp-api.io";
       void this.plugin.saveSettings();
       this.display();
     });
 
-    const localBtn = presetContainer.createEl("button", {
-      text: "Use local",
-      cls: "hyvmind-preset-btn",
-    });
-    localBtn.addEventListener("click", () => {
+    const localBtn = new ButtonComponent(presetContainer);
+    localBtn.setButtonText("Use local");
+    localBtn.onClick(() => {
       this.plugin.settings.identityProviderUrl = "http://id.ai.localhost:8000";
       this.plugin.settings.host = "http://localhost:8000";
       void this.plugin.saveSettings();
@@ -230,24 +255,62 @@ export class HyvmindSettingTab extends PluginSettingTab {
     });
   }
 
+  private async handleImportToken(): Promise<void> {
+    try {
+      const identity = await this.plugin.auth.importDelegationToken(
+        this.plugin.settings.delegationToken
+      );
+      const principal = identity.getPrincipal().toText();
+      this.plugin.settings.principal = principal;
+      await this.plugin.saveSettings();
+      await this.plugin.agent.createAuthenticatedActor(identity);
+      this.updateTokenStatus();
+      new Notice("Token imported successfully!");
+    } catch (err) {
+      new Notice(
+        `Failed to import token: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  private async handleDeleteToken(): Promise<void> {
+    await this.plugin.auth.logout();
+    this.plugin.settings.delegationToken = "";
+    this.plugin.settings.principal = null;
+    await this.plugin.saveSettings();
+    this.tokenInput.setValue("");
+    this.updateTokenStatus();
+    new Notice("Token deleted");
+  }
+
   private updateTokenStatus(): void {
     const tokenInfo = this.plugin.auth.getTokenInfo();
 
+    this.tokenStatusEl.empty();
+
+    const statusSpan = this.tokenStatusEl.createEl("span", {
+      cls: "hyvmind-status",
+    });
+
     if (tokenInfo.isExpired) {
-      this.tokenStatusEl.innerHTML =
-        '<span class="hyvmind-status hyvmind-status-expired">Expired</span>';
+      statusSpan.addClass("hyvmind-status-expired");
+      statusSpan.setText("Expired");
       this.deleteBtn.removeAttribute("disabled");
     } else if (tokenInfo.valid && tokenInfo.principal) {
+      statusSpan.addClass("hyvmind-status-valid");
       const expiryStr = tokenInfo.expiry
         ? ` until ${tokenInfo.expiry.toLocaleDateString()}`
         : "";
-      this.tokenStatusEl.innerHTML =
-        `<span class="hyvmind-status hyvmind-status-valid">Valid${expiryStr}</span> ` +
-        `<span class="hyvmind-principal">${tokenInfo.principal.slice(0, 8)}...</span>`;
+      statusSpan.setText(`Valid${expiryStr}`);
+
+      this.tokenStatusEl.createEl("span", {
+        cls: "hyvmind-principal",
+        text: `${tokenInfo.principal.slice(0, 8)}...`,
+      });
       this.deleteBtn.removeAttribute("disabled");
     } else {
-      this.tokenStatusEl.innerHTML =
-        '<span class="hyvmind-status hyvmind-status-none">No token</span>';
+      statusSpan.addClass("hyvmind-status-none");
+      statusSpan.setText("No token");
       this.deleteBtn.setAttribute("disabled", "true");
     }
   }
