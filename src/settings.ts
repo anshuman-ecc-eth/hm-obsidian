@@ -32,7 +32,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Settings" });
+    new Setting(containerEl).setHeading().setName("Settings");
 
     // Canister ID setting
     new Setting(containerEl)
@@ -50,7 +50,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     // Identity Provider URL setting
     new Setting(containerEl)
-      .setName("Identity Provider URL")
+      .setName("Identity provider URL")
       .setDesc("Internet Identity URL (use http://id.ai.localhost:8000 for local development)")
       .addText((text) =>
         text
@@ -64,7 +64,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     // Host setting
     new Setting(containerEl)
-      .setName("ICP Host")
+      .setName("ICP host")
       .setDesc("ICP network host (use http://localhost:8000 for local development)")
       .addText((text) =>
         text
@@ -78,7 +78,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     // User Name setting
     new Setting(containerEl)
-      .setName("Display Name")
+      .setName("Display name")
       .setDesc("Your display name for Hyvmind (will be used when creating your user profile)")
       .addText((text) =>
         text
@@ -91,12 +91,12 @@ export class HyvmindSettingTab extends PluginSettingTab {
       );
 
     // Info section
-    containerEl.createEl("h3", { text: "Environment presets" });
+    new Setting(containerEl).setHeading().setName("Environment presets");
 
     const presetContainer = containerEl.createDiv({ cls: "hyvmind-preset-container" });
 
     const mainnetBtn = presetContainer.createEl("button", {
-      text: "Use Mainnet",
+      text: "Use mainnet",
       cls: "hyvmind-preset-btn",
     });
     this.plugin.registerDomEvent(mainnetBtn, "click", async () => {
@@ -107,7 +107,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
     });
 
     const localBtn = presetContainer.createEl("button", {
-      text: "Use Local",
+      text: "Use local",
       cls: "hyvmind-preset-btn",
     });
     this.plugin.registerDomEvent(localBtn, "click", async () => {

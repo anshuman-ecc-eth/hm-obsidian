@@ -9,7 +9,7 @@ import { Principal } from "@icp-sdk/core/principal";
 import { HyvmindActor, PublishSourceGraphInput, PublishResult } from "../types/canister";
 
 // Candid IDL for the Hyvmind backend
-const idlFactory = ({ IDL }: { IDL: any }) => {
+const idlFactory = ({ IDL }: { IDL: IDL }) => {
   const CustomAttribute = IDL.Record({
     key: IDL.Text,
     value: IDL.Text,

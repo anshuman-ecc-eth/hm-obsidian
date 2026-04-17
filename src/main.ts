@@ -10,8 +10,6 @@ import {
   Menu,
   Modal,
   App,
-  Setting,
-  ButtonComponent,
 } from "obsidian";
 import { HyvmindSettings, DEFAULT_SETTINGS, HyvmindSettingTab } from "./settings";
 import { ICPAuth } from "./icp/auth";
@@ -20,11 +18,11 @@ import { FolderUploader } from "./icp/uploader";
 import { ConnectionStatusBar } from "./ui/status-bar";
 
 export default class HyvmindPlugin extends Plugin {
-  settings: HyvmindSettings;
-  auth: ICPAuth;
-  agent: ICPAgent;
-  uploader: FolderUploader;
-  statusBar: ConnectionStatusBar;
+  settings!: HyvmindSettings;
+  auth!: ICPAuth;
+  agent!: ICPAgent;
+  uploader!: FolderUploader;
+  statusBar!: ConnectionStatusBar;
 
   async onload() {
     await this.loadSettings();
@@ -78,7 +76,7 @@ export default class HyvmindPlugin extends Plugin {
           if (!checking) {
             const folder = file.parent;
             if (folder) {
-              this.uploadFolder(folder);
+              void this.uploadFolder(folder);
             }
           }
           return true;
@@ -95,7 +93,7 @@ export default class HyvmindPlugin extends Plugin {
             item
               .setTitle("Upload to Hyvmind")
               .setIcon("upload-cloud")
-              .onClick(() => this.uploadFolder(folder));
+              .onClick(() => { void this.uploadFolder(folder); });
           });
         }
       })
@@ -133,7 +131,7 @@ export default class HyvmindPlugin extends Plugin {
       // Initialize access control if needed
       try {
         await this.agent.initializeAccessControl();
-      } catch (e) {
+      } catch {
         // Already initialized, ignore
       }
 
@@ -141,7 +139,7 @@ export default class HyvmindPlugin extends Plugin {
       if (this.settings.userName) {
         try {
           await this.agent.saveUserProfile(this.settings.userName);
-        } catch (e) {
+        } catch {
           // Profile may already exist, ignore
         }
       }
@@ -231,14 +229,14 @@ export default class HyvmindPlugin extends Plugin {
         item
           .setTitle("Connect to ICP")
           .setIcon("log-in")
-          .onClick(() => this.connectToICP())
+          .onClick(() => { void this.connectToICP(); })
       );
     } else {
       menu.addItem((item) =>
         item
           .setTitle("Disconnect from ICP")
           .setIcon("log-out")
-          .onClick(() => this.disconnectFromICP())
+          .onClick(() => { void this.disconnectFromICP(); })
       );
 
       menu.addSeparator();
@@ -250,7 +248,7 @@ export default class HyvmindPlugin extends Plugin {
           .onClick(() => {
             const file = this.app.workspace.getActiveFile();
             if (file && file.parent) {
-              this.uploadFolder(file.parent);
+              void this.uploadFolder(file.parent);
             } else {
               new Notice("No folder selected");
             }
@@ -267,8 +265,8 @@ export default class HyvmindPlugin extends Plugin {
  */
 class UploadProgressModal extends Modal {
   private folderName: string;
-  private progressEl: HTMLElement;
-  private statusEl: HTMLElement;
+  private progressEl!: HTMLElement;
+  private statusEl!: HTMLElement;
 
   constructor(app: App, folderName: string) {
     super(app);
