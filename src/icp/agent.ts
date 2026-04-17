@@ -8,7 +8,6 @@ import { Identity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
 import { HyvmindActor, PublishSourceGraphInput, PublishResult } from "../types/canister";
 
-// Candid IDL for the Hyvmind backend
 const idlFactory = ({ IDL }: { IDL: IDL }) => {
   const CustomAttribute = IDL.Record({
     key: IDL.Text,
@@ -58,6 +57,21 @@ const idlFactory = ({ IDL }: { IDL: IDL }) => {
   });
 };
 
+function getRootKey(): Uint8Array | undefined {
+  try {
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "IC_ROOT_KEY" && value) {
+        return Uint8Array.from(atob(value));
+      }
+    }
+  } catch {
+    // Cookie not available or parsing failed
+  }
+  return undefined;
+}
+
 export class ICPAgent {
   private agent: HttpAgent | null = null;
   private actor: HyvmindActor | null = null;
@@ -69,23 +83,19 @@ export class ICPAgent {
     this.host = host;
   }
 
-  /**
-   * Create an authenticated agent and actor
-   */
   async createAuthenticatedActor(identity: Identity): Promise<HyvmindActor> {
-    // Create HttpAgent with identity
+    const rootKey = getRootKey();
+
     this.agent = await HttpAgent.create({
       identity,
       host: this.host,
+      rootKey: rootKey,
     });
 
-    // For local development, fetch root key
-    // Note: In production, the root key is built-in
-    if (this.host.includes("localhost")) {
+    if (!rootKey && this.host.includes("localhost")) {
       await this.agent.fetchRootKey();
     }
 
-    // Create actor
     this.actor = Actor.createActor<HyvmindActor>(idlFactory, {
       agent: this.agent,
       canisterId: Principal.fromText(this.canisterId),
@@ -94,27 +104,17 @@ export class ICPAgent {
     return this.actor;
   }
 
-  /**
-   * Get the current actor
-   */
   getActor(): HyvmindActor | null {
     return this.actor;
   }
 
-  /**
-   * Update configuration
-   */
   updateConfig(canisterId: string, host: string): void {
     this.canisterId = canisterId;
     this.host = host;
-    // Reset actor - will need to re-authenticate
     this.actor = null;
     this.agent = null;
   }
 
-  /**
-   * Publish source graph to canister
-   */
   async publishSourceGraph(input: PublishSourceGraphInput): Promise<PublishResult> {
     if (!this.actor) {
       throw new Error("Actor not initialized");
@@ -124,9 +124,6 @@ export class ICPAgent {
     return result;
   }
 
-  /**
-   * Check if caller is approved
-   */
   async isCallerApproved(): Promise<boolean> {
     if (!this.actor) {
       throw new Error("Actor not initialized");
@@ -135,9 +132,6 @@ export class ICPAgent {
     return await this.actor.isCallerApproved();
   }
 
-  /**
-   * Initialize access control
-   */
   async initializeAccessControl(): Promise<void> {
     if (!this.actor) {
       throw new Error("Actor not initialized");
@@ -146,9 +140,6 @@ export class ICPAgent {
     await this.actor.initializeAccessControl();
   }
 
-  /**
-   * Request approval
-   */
   async requestApproval(): Promise<void> {
     if (!this.actor) {
       throw new Error("Actor not initialized");
@@ -157,9 +148,6 @@ export class ICPAgent {
     await this.actor.requestApproval();
   }
 
-  /**
-   * Save user profile
-   */
   async saveUserProfile(name: string): Promise<void> {
     if (!this.actor) {
       throw new Error("Actor not initialized");
@@ -171,9 +159,6 @@ export class ICPAgent {
     });
   }
 
-  /**
-   * Get user profile
-   */
   async getUserProfile(): Promise<{ name: string; socialUrl: string | null } | null> {
     if (!this.actor) {
       throw new Error("Actor not initialized");

@@ -136,6 +136,9 @@ export class FolderUploader {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
+      if (!batch) {
+        continue;
+      }
 
       onProgress?.({
         totalFiles: graph.nodes.length,
