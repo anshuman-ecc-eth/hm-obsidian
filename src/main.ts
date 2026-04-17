@@ -58,13 +58,13 @@ export default class HyvmindPlugin extends Plugin {
     this.addCommand({
       id: "connect-to-icp",
       name: "Connect to ICP",
-      callback: () => this.connectToICP(),
+      callback: () => { void this.connectToICP(); },
     });
 
     this.addCommand({
       id: "disconnect-from-icp",
       name: "Disconnect from ICP",
-      callback: () => this.disconnectFromICP(),
+      callback: () => { void this.disconnectFromICP(); },
     });
 
     this.addCommand({

@@ -32,7 +32,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    new Setting(containerEl).setHeading().setName("Settings");
+    new Setting(containerEl).setHeading().setName("settings");
 
     // Canister ID setting
     new Setting(containerEl)
@@ -42,9 +42,9 @@ export class HyvmindSettingTab extends PluginSettingTab {
         text
           .setPlaceholder("Enter canister ID")
           .setValue(this.plugin.settings.canisterId)
-          .onChange(async (value) => {
+          .onChange((value) => {
             this.plugin.settings.canisterId = value.trim();
-            await this.plugin.saveSettings();
+            void this.plugin.saveSettings();
           })
       );
 
@@ -56,9 +56,9 @@ export class HyvmindSettingTab extends PluginSettingTab {
         text
           .setPlaceholder("https://id.ai")
           .setValue(this.plugin.settings.identityProviderUrl)
-          .onChange(async (value) => {
+          .onChange((value) => {
             this.plugin.settings.identityProviderUrl = value.trim();
-            await this.plugin.saveSettings();
+            void this.plugin.saveSettings();
           })
       );
 
@@ -70,9 +70,9 @@ export class HyvmindSettingTab extends PluginSettingTab {
         text
           .setPlaceholder("https://icp-api.io")
           .setValue(this.plugin.settings.host)
-          .onChange(async (value) => {
+          .onChange((value) => {
             this.plugin.settings.host = value.trim();
-            await this.plugin.saveSettings();
+            void this.plugin.saveSettings();
           })
       );
 
@@ -84,9 +84,9 @@ export class HyvmindSettingTab extends PluginSettingTab {
         text
           .setPlaceholder("Enter your name")
           .setValue(this.plugin.settings.userName)
-          .onChange(async (value) => {
+          .onChange((value) => {
             this.plugin.settings.userName = value.trim();
-            await this.plugin.saveSettings();
+            void this.plugin.saveSettings();
           })
       );
 
@@ -99,10 +99,10 @@ export class HyvmindSettingTab extends PluginSettingTab {
       text: "Use mainnet",
       cls: "hyvmind-preset-btn",
     });
-    this.plugin.registerDomEvent(mainnetBtn, "click", async () => {
+    this.plugin.registerDomEvent(mainnetBtn, "click", () => {
       this.plugin.settings.identityProviderUrl = "https://id.ai";
       this.plugin.settings.host = "https://icp-api.io";
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
       this.display(); // Refresh UI
     });
 
@@ -110,10 +110,10 @@ export class HyvmindSettingTab extends PluginSettingTab {
       text: "Use local",
       cls: "hyvmind-preset-btn",
     });
-    this.plugin.registerDomEvent(localBtn, "click", async () => {
+    this.plugin.registerDomEvent(localBtn, "click", () => {
       this.plugin.settings.identityProviderUrl = "http://id.ai.localhost:8000";
       this.plugin.settings.host = "http://localhost:8000";
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
       this.display(); // Refresh UI
     });
   }
