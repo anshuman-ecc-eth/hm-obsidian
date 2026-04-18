@@ -66,8 +66,8 @@ export class ICPAuth {
             }
             return null;
           },
-          set: async () => {},
-          remove: async () => {},
+          set: () => Promise.resolve(),
+          remove: () => Promise.resolve(),
         };
 
         this.client = await AuthClient.create({ storage: customStorage });
@@ -103,8 +103,8 @@ export class ICPAuth {
         }
         return null;
       },
-      set: async () => {},
-      remove: async () => {},
+      set: () => Promise.resolve(),
+      remove: () => Promise.resolve(),
     };
 
     this.client = await AuthClient.create({ storage: customStorage });

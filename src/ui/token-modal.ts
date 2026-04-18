@@ -78,16 +78,16 @@ export class TokenInstructionsModal extends Modal {
       text: "If the above is too complex, try this in the browser console:",
     });
 
-    const codeEl = contentEl.createEl("pre", {
+    contentEl.createEl("pre", {
       cls: "hyvmind-code-block",
-      text: `navigator余storage.getItem('delegation').then(console.log)`,
+      text: `navigator.storage.getItem('delegation').then(console.log)`,
     });
 
     const copyBtn = new ButtonComponent(contentEl);
     copyBtn.setButtonText("Copy code");
     copyBtn.onClick(() => {
       void navigator.clipboard.writeText(
-        `navigator余storage.getItem('delegation').then(console.log)`
+        `navigator.storage.getItem('delegation').then(console.log)`
       );
       copyBtn.setButtonText("Copied!");
       setTimeout(() => copyBtn.setButtonText("Copy code"), 2000);

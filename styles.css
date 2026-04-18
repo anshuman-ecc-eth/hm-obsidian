@@ -22,7 +22,7 @@
 }
 
 .hyvmind-progress-bar .hyvmind-progress-fill {
-  width: 0%;
+  width: var(--progress-width, 0%);
   height: 100%;
   background-color: var(--interactive-accent);
   transition: width 0.3s ease;
@@ -83,6 +83,12 @@
 /* ========================================
    Authentication Settings Styles
    ======================================== */
+
+.hyvmind-confirm-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
 
 .hyvmind-auth-desc {
   font-size: var(--font-ui-small);

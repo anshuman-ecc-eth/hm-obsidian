@@ -267,7 +267,7 @@ class UploadProgressModal extends Modal {
     const fill = this.progressEl.querySelector(".hyvmind-progress-fill");
     if (fill && progress.totalFiles > 0) {
       const percentage = (progress.processedFiles / progress.totalFiles) * 100;
-      (fill as HTMLElement).style.width = `${percentage}%`;
+      (fill as HTMLElement).style.setProperty("--progress-width", `${percentage}%`);
       fill.setAttribute("aria-valuenow", Math.round(percentage).toString());
     }
   }

@@ -41,14 +41,11 @@ class DeleteConfirmModal extends Modal {
       text: "You will need to re-authenticate to use the plugin again.",
     });
 
-    const btnContainer = contentEl.createDiv();
-    btnContainer.style.display = "flex";
-    btnContainer.style.gap = "8px";
+    const btnContainer = contentEl.createDiv({ cls: "hyvmind-confirm-buttons" });
 
     const cancelBtn = new ButtonComponent(btnContainer);
     cancelBtn.setButtonText("Cancel");
     cancelBtn.onClick(() => this.close());
-    cancelBtn.buttonEl.style.marginTop = "16px";
 
     const deleteBtn = new ButtonComponent(btnContainer);
     deleteBtn.setButtonText("Delete");
@@ -57,7 +54,6 @@ class DeleteConfirmModal extends Modal {
       this.onConfirm();
       this.close();
     });
-    deleteBtn.buttonEl.style.marginTop = "16px";
   }
 
   onClose() {

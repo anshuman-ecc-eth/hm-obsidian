@@ -72,7 +72,7 @@ This plugin uses **manual token-based authentication** because Obsidian's embedd
    - Open Developer Tools → Console
    - Run this code and copy the result:
    ```javascript
-   navigator余storage.getItem('delegation').then(console.log)
+   navigator.storage.getItem('delegation').then(console.log)
    ```
 
 4. **Import the token in Obsidian:**
@@ -190,7 +190,7 @@ src/
 
 ## License
 
-0BSD License - See [LICENSE](LICENSE) for details
+MIT License - See [LICENSE](LICENSE) for details
 
 ## Support
 
