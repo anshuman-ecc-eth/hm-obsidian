@@ -31,6 +31,8 @@ const context = await esbuild.context({
 		"@lezer/common",
 		"@lezer/highlight",
 		"@lezer/lr",
+		"@icp-sdk/auth",
+		"@icp-sdk/core",
 		...builtinModules],
 	format: "cjs",
 	target: "es2018",

@@ -58,7 +58,7 @@ export default class HyvmindPlugin extends Plugin {
     this.statusBar = new ConnectionStatusBar(statusBarItem);
     this.updateStatusBar();
 
-    this.addRibbonIcon("upload-cloud", "Hyvmind Uploader", () => {
+    this.addRibbonIcon("upload-cloud", "Hyvmind uploader", () => {
       this.showUploadMenu();
     });
 
@@ -205,7 +205,7 @@ export default class HyvmindPlugin extends Plugin {
     } else {
       menu.addItem((item) =>
         item
-          .setTitle("Authenticate in Settings")
+          .setTitle("Authenticate in settings")
           .setIcon("settings")
           .onClick(() => {
             // This will open the settings tab - user needs to import token there

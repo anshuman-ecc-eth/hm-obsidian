@@ -59,16 +59,16 @@ export class ICPAuth {
       try {
         const tokenData = JSON.parse(storedToken);
 
-        const customStorage: AuthClientStorage = {
-          get: async (key: string) => {
-            if (key === KEY_DELEGATION) {
-              return tokenData;
-            }
-            return null;
-          },
-          set: () => Promise.resolve(),
-          remove: () => Promise.resolve(),
-        };
+    const customStorage: AuthClientStorage = {
+      get: (key: string) => {
+        if (key === KEY_DELEGATION) {
+          return Promise.resolve(tokenData);
+        }
+        return Promise.resolve(null);
+      },
+      set: () => Promise.resolve(),
+      remove: () => Promise.resolve(),
+    };
 
         this.client = await AuthClient.create({ storage: customStorage });
 
@@ -97,11 +97,11 @@ export class ICPAuth {
     this.storage.setDelegationToken(tokenJson);
 
     const customStorage: AuthClientStorage = {
-      get: async (key: string) => {
+      get: (key: string) => {
         if (key === KEY_DELEGATION) {
-          return parsed;
+          return Promise.resolve(parsed);
         }
-        return null;
+        return Promise.resolve(null);
       },
       set: () => Promise.resolve(),
       remove: () => Promise.resolve(),
