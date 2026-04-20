@@ -3,7 +3,7 @@
  * Uploads folders to Hyvmind ICP app as source graphs
  */
 
-import { Plugin, TFolder, Notice, Menu, Modal, App } from "obsidian";
+import { Plugin, TFolder, TAbstractFile, Notice, Menu, Modal, App } from "obsidian";
 import { HyvmindSettings, DEFAULT_SETTINGS, HyvmindSettingTab } from "./settings";
 import { ICPAuth, TokenStorage } from "./icp/auth";
 import { ICPAgent } from "./icp/agent";
@@ -89,14 +89,14 @@ export default class HyvmindPlugin extends Plugin {
     });
 
     this.registerEvent(
-      this.app.workspace.on("file-menu", (menu: Menu, folder: TFolder) => {
-        if (folder instanceof TFolder) {
+      this.app.workspace.on("file-menu", (menu: Menu, abstractFile: TAbstractFile) => {
+        if (abstractFile instanceof TFolder) {
           menu.addItem((item) => {
             item
               .setTitle("Upload to Hyvmind")
               .setIcon("upload-cloud")
               .onClick(() => {
-                void this.uploadFolder(folder);
+                void this.uploadFolder(abstractFile);
               });
           });
         }

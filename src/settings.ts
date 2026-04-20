@@ -2,9 +2,11 @@
  * Hyvmind plugin settings
  */
 
-import { App, PluginSettingTab, Setting, TextAreaComponent, Notice, Modal, ButtonComponent } from "obsidian";
-import HyvmindPlugin from "../main";
+import { App, Plugin, PluginSettingTab, Setting, TextAreaComponent, Notice, Modal, ButtonComponent } from "obsidian";
 import { TokenInstructionsModal } from "./ui/token-modal";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type HyvmindPlugin = any;
 
 export interface HyvmindSettings {
   canisterId: string;

@@ -150,9 +150,11 @@ export class ICPAuth {
       const chain = (this.client as unknown as { _chain?: DelegationInfo })._chain;
       if (chain && chain.delegations && chain.delegations.length > 0) {
         const lastDel = chain.delegations[chain.delegations.length - 1];
-        const expirationNs = lastDel.delegation.expiration;
-        expiry = new Date(Number(expirationNs / BigInt(1_000_000)));
-        isExpired = expiry < new Date();
+        if (lastDel && lastDel.delegation) {
+          const expirationNs = lastDel.delegation.expiration;
+          expiry = new Date(Number(expirationNs / BigInt(1_000_000)));
+          isExpired = expiry < new Date();
+        }
       }
     } catch {
       isExpired = true;
