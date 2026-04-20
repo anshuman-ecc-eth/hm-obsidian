@@ -86,7 +86,7 @@ export class TokenInstructionsModal extends Modal {
     const copyBtn = new ButtonComponent(contentEl);
     copyBtn.setButtonText("Copy code");
     copyBtn.onClick(() => {
-      navigator.clipboard.writeText(
+      void navigator.clipboard.writeText(
         `navigator.storage.getItem('delegation').then(console.log)`
       ).then(() => {
         copyBtn.setButtonText("Copied!");

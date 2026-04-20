@@ -66,8 +66,14 @@ export class ICPAuth {
         }
         return Promise.resolve(null);
       },
-      set: () => Promise.resolve(),
-      remove: () => Promise.resolve(),
+      set: () => {
+        // Storage is handled by the plugin settings, no-op here
+        return Promise.resolve();
+      },
+      remove: () => {
+        // Storage is handled by the plugin settings, no-op here
+        return Promise.resolve();
+      },
     };
 
         this.client = await AuthClient.create({ storage: customStorage });
@@ -103,8 +109,14 @@ export class ICPAuth {
         }
         return Promise.resolve(null);
       },
-      set: () => Promise.resolve(),
-      remove: () => Promise.resolve(),
+      set: () => {
+        // Storage is handled by the plugin settings, no-op here
+        return Promise.resolve();
+      },
+      remove: () => {
+        // Storage is handled by the plugin settings, no-op here
+        return Promise.resolve();
+      },
     };
 
     this.client = await AuthClient.create({ storage: customStorage });
