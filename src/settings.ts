@@ -2,11 +2,9 @@
  * Hyvmind plugin settings
  */
 
-import { App, Plugin, PluginSettingTab, Setting, TextAreaComponent, Notice, Modal, ButtonComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, TextAreaComponent, Notice, Modal, ButtonComponent } from "obsidian";
 import { TokenInstructionsModal } from "./ui/token-modal";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type HyvmindPlugin = any;
+import type HyvmindPlugin from "./main";
 
 export interface HyvmindSettings {
   canisterId: string;
@@ -84,7 +82,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Canister ID")
-      .setDesc("The canister ID of the Hyvmind backend")
+      .setDesc("The canister ID of the hyvmind backend")
       .addText((text) =>
         text
           .setPlaceholder("Enter canister ID")
@@ -123,7 +121,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Display name")
-      .setDesc("Your display name for Hyvmind (will be used when creating your user profile)")
+      .setDesc("Your display name for hyvmind (will be used when creating your user profile)")
       .addText((text) =>
         text
           .setPlaceholder("Enter your name")

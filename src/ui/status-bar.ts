@@ -47,8 +47,8 @@ export class ConnectionStatusBar {
       this.element.removeClass("hyvmind-status-disconnected");
     } else {
       // Show disconnected status
-      this.element.setText("⚪ Hyvmind: Not connected");
-      this.element.title = "Click 'Connect to ICP' command to authenticate";
+      this.element.setText("⚪ hyvmind: Not connected");
+      this.element.title = "Click 'authenticate in settings' command to authenticate";
       this.element.addClass("hyvmind-status-disconnected");
       this.element.removeClass("hyvmind-status-connected");
     }

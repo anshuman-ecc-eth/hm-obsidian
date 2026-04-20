@@ -72,7 +72,7 @@ export default class HyvmindPlugin extends Plugin {
 
     this.addCommand({
       id: "upload-current-folder",
-      name: "Upload current folder to Hyvmind",
+      name: "Upload current folder to hyvmind",
       checkCallback: (checking: boolean) => {
         const file = this.app.workspace.getActiveFile();
         if (file) {
@@ -93,7 +93,7 @@ export default class HyvmindPlugin extends Plugin {
         if (abstractFile instanceof TFolder) {
           menu.addItem((item) => {
             item
-              .setTitle("Upload to Hyvmind")
+              .setTitle("Upload to hyvmind")
               .setIcon("upload-cloud")
               .onClick(() => {
                 void this.uploadFolder(abstractFile);
@@ -135,7 +135,7 @@ export default class HyvmindPlugin extends Plugin {
 
   private async uploadFolder(folder: TFolder): Promise<void> {
     if (!this.auth.isAuthenticated()) {
-      new Notice("Please import a token in Settings to authenticate first");
+      new Notice("Please import a token in settings to authenticate first");
       return;
     }
 
@@ -209,7 +209,7 @@ export default class HyvmindPlugin extends Plugin {
           .setIcon("settings")
           .onClick(() => {
             // This will open the settings tab - user needs to import token there
-            new Notice("Please import a token in the Hyvmind settings");
+            new Notice("Please import a token in the hyvmind settings");
           })
       );
     }
@@ -232,7 +232,7 @@ class UploadProgressModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h2", { text: `Uploading to Hyvmind` });
+    contentEl.createEl("h2", { text: `Uploading to hyvmind` });
     contentEl.createEl("p", { text: `Folder: ${this.folderName}` });
 
     this.statusEl = contentEl.createEl("p", {

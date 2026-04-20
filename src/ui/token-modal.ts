@@ -71,7 +71,7 @@ export class TokenInstructionsModal extends Modal {
     ];
     this.createStep(olEl, step8);
 
-    contentEl.createEl("h3", { text: "Alternative method (Console)" });
+    contentEl.createEl("h3", { text: "Alternative method (console)" });
 
     contentEl.createEl("p", {
       text: "If the above is too complex, try this in the browser console:",
@@ -89,7 +89,10 @@ export class TokenInstructionsModal extends Modal {
         `navigator.storage.getItem('delegation').then(console.log)`
       ).then(() => {
         copyBtn.setButtonText("Copied!");
-        setTimeout(() => copyBtn.setButtonText("Copy code"), 2000);
+        setTimeout(() => {
+          copyBtn.setButtonText("Copy code");
+        }, 2000);
+        return undefined;
       }).catch(() => {
         // Clipboard write failed silently
       });
@@ -98,7 +101,7 @@ export class TokenInstructionsModal extends Modal {
     contentEl.createEl("h3", { text: "After getting the token" });
 
     contentEl.createEl("p", {
-      text: 'Copy the token value (it starts with {"delegations":...) and paste it into the token field in the Hyvmind settings.',
+      text: 'Copy the token value (it starts with {"delegations":...) and paste it into the token field in the hyvmind settings.',
     });
 
     contentEl.createEl("p", {
