@@ -96,6 +96,15 @@
   margin-bottom: 1rem;
 }
 
+.hyvmind-auth-note {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: var(--background-secondary);
+  border-radius: var(--radius-s);
+}
+
 .hyvmind-auth-buttons {
   display: flex;
   gap: 0.5rem;

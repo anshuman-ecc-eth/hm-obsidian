@@ -51,45 +51,25 @@ Use the **Environment Presets** buttons to quickly switch between mainnet and lo
 
 ## Authentication
 
-This plugin uses **manual token-based authentication** because Obsidian's embedded browser cannot open the system browser for security reasons.
+This plugin uses **delegation token authentication** because Obsidian's embedded browser cannot directly sign in with Internet Identity.
 
 ### How to Authenticate
 
-1. **Open https://id.ai in your system browser** (Chrome, Firefox, Safari, Edge - not inside Obsidian)
+1. **Open https://hyvmind.app/obsidian-token in your browser** (Chrome, Firefox, Safari, Edge — not inside Obsidian)
 
 2. **Sign in** with your passkey, Apple, Google, or Microsoft account
 
-3. **Get your delegation token:**
-   - Open Developer Tools (F12 or Cmd+Option+I)
-   - Go to the **Application** tab (or **Storage** tab in some browsers)
-   - Find **IndexedDB** in the left sidebar
-   - Look for a database named something like `identity` or `dfinity...`
-   - Open the database and find the **info** object store
-   - Find the key named `delegation` and copy its value
+3. **Click "Copy"** to copy your delegation token
 
-   **Or use the console method:**
-   - Open https://id.ai in your browser and sign in
-   - Open Developer Tools → Console
-   - Run this code and copy the result:
-   ```javascript
-   navigator.storage.getItem('delegation').then(console.log)
-   ```
-
-4. **Import the token in Obsidian:**
-   - Go to **Settings → Hyvmind Uploader**
-   - Paste the token JSON into the **Delegation token** field
+4. **In Obsidian**, go to **Settings → Hyvmind Uploader**:
+   - Paste the token into the **Delegation token** field
    - Click **Import token**
-   - Choose your **Token expiry** preference (1 day, 7 days, or 30 days)
 
-5. The token status will show "Valid" with the expiry date
+5. The token status will show **"Valid"** when authenticated
 
-### Token Expiry Options
+### Token Expiry
 
-| Option | Recommended For |
-|--------|----------------|
-| 1 day | High security environments |
-| 7 days | Default - balance of security and convenience |
-| 30 days | Lower security tolerance, maximum convenience |
+Tokens are valid for **30 days**. When yours expires, repeat the steps above to get a new one.
 
 ### Deleting Your Token
 

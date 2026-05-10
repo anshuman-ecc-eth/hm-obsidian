@@ -3,7 +3,6 @@
  */
 
 import { App, PluginSettingTab, Setting, TextAreaComponent, Notice, Modal, ButtonComponent } from "obsidian";
-import { TokenInstructionsModal } from "./ui/token-modal";
 import type HyvmindPlugin from "./main";
 
 export interface HyvmindSettings {
@@ -138,19 +137,18 @@ export class HyvmindSettingTab extends PluginSettingTab {
       cls: "hyvmind-auth-desc",
     });
     authDescEl.createEl("p", {
-      text: "To authenticate, you need a delegation token from Internet Identity.",
-    });
-    authDescEl.createEl("p", {
-      text: "Since Obsidian cannot open the system browser directly, you must import a token manually.",
+      text: "To authenticate, you need a delegation token. Get yours in one click:",
     });
 
-    const helpLink = authDescEl.createEl("a", {
-      href: "#",
-      text: "How to get a token?",
+    const getTokenBtn = new ButtonComponent(authDescEl);
+    getTokenBtn.setButtonText("Get token at hyvmind.app/obsidian-token");
+    getTokenBtn.setCta();
+    getTokenBtn.onClick(() => {
+      window.open("https://hyvmind.app/obsidian-token", "_blank");
     });
-    helpLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      new TokenInstructionsModal(this.app).open();
+
+    authDescEl.createEl("p", {
+      text: "Once you've copied your token from the web page, paste it below and click Import.",
     });
 
     new Setting(containerEl)
@@ -158,7 +156,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
       .setDesc("Paste your delegation token JSON here")
       .addTextArea((ta) => {
         ta.inputEl.rows = 4;
-        ta.setPlaceholder("Paste your delegation token JSON here...");
+        ta.setPlaceholder('Paste your token here ({"delegations":...})');
         ta.setValue(this.plugin.settings.delegationToken);
         ta.onChange((value) => {
           this.plugin.settings.delegationToken = value.trim();
@@ -185,25 +183,10 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     const helpBtn = new ButtonComponent(btnContainer);
     helpBtn.setButtonText("?");
-    helpBtn.setTooltip("How to get a token");
+    helpBtn.setTooltip("Open instructions");
     helpBtn.onClick(() => {
-      new TokenInstructionsModal(this.app).open();
+      window.open("https://hyvmind.app/obsidian-token", "_blank");
     });
-
-    new Setting(containerEl)
-      .setName("Token expiry")
-      .setDesc("Choose how long your imported token should be valid for")
-      .addDropdown((dropdown) => {
-        dropdown
-          .addOption("1", "1 day")
-          .addOption("7", "7 days")
-          .addOption("30", "30 days");
-        dropdown.setValue(this.plugin.settings.tokenExpiryDays);
-        dropdown.onChange((value) => {
-          this.plugin.settings.tokenExpiryDays = value as "1" | "7" | "30";
-          void this.plugin.saveSettings();
-        });
-      });
 
     new Setting(containerEl)
       .setName("Token status")
