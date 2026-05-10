@@ -44,6 +44,9 @@ export default class HyvmindPlugin extends Plugin {
 
     if (this.binding.isBound()) {
       this.settings.principal = this.binding.getBoundUser();
+    } else {
+      // Auto-check if binding was approved on the backend
+      void this.checkBindingStatus();
     }
 
     this.addSettingTab(new HyvmindSettingTab(this.app, this));
@@ -137,6 +140,22 @@ export default class HyvmindPlugin extends Plugin {
       this.statusBar.setConnected(user ? user.slice(0, 8) : "bound");
     } else {
       this.statusBar.setDisconnected();
+    }
+  }
+
+  async checkBindingStatus(): Promise<void> {
+    if (this.binding.isBound()) return;
+    try {
+      const isBound = await this.agent.getPluginBindingStatus();
+      if (isBound && this.settings.userPrincipal) {
+        this.binding.persistBoundUser(this.settings.userPrincipal);
+        this.settings.principal = this.settings.userPrincipal;
+        await this.saveSettings();
+        this.updateStatusBar();
+        new Notice("Plugin binding confirmed!");
+      }
+    } catch {
+      // Actor not ready or network error — will retry on next load
     }
   }
 

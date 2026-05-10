@@ -66,7 +66,7 @@ export class PluginBinding {
     return this.boundUserPrincipal;
   }
 
-  setBoundUser(userPrincipal: string): void {
+  persistBoundUser(userPrincipal: string | null): void {
     this.boundUserPrincipal = userPrincipal;
     this.persist();
   }

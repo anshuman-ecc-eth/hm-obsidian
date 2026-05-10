@@ -126,6 +126,12 @@ export class HyvmindSettingTab extends PluginSettingTab {
     });
     this.updateBindingStatus();
 
+    const refreshBtn = new ButtonComponent(btnContainer);
+    refreshBtn.setButtonText("Refresh status");
+    refreshBtn.onClick(() => {
+      void this.handleRefreshBinding();
+    });
+
     const unbindBtn = new ButtonComponent(btnContainer);
     unbindBtn.setButtonText("Unbind");
     unbindBtn.setWarning();
@@ -181,6 +187,27 @@ export class HyvmindSettingTab extends PluginSettingTab {
     } catch (err) {
       new Notice(
         `Failed to request binding: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  private async handleRefreshBinding(): Promise<void> {
+    try {
+      const isBound = await this.plugin.agent.getPluginBindingStatus();
+      if (isBound && this.plugin.settings.userPrincipal) {
+        this.plugin.binding.persistBoundUser(this.plugin.settings.userPrincipal);
+        this.plugin.settings.principal = this.plugin.settings.userPrincipal;
+        await this.plugin.saveSettings();
+        this.updateBindingStatus();
+        new Notice("Binding confirmed!");
+      } else if (isBound && !this.plugin.settings.userPrincipal) {
+        new Notice("Binding confirmed but no principal saved. Enter your principal and refresh.");
+      } else {
+        new Notice("No binding found. Send a request first.");
+      }
+    } catch (err) {
+      new Notice(
+        `Failed to check binding: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
