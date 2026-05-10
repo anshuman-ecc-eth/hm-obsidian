@@ -1,164 +1,90 @@
-import { AuthClient } from "@icp-sdk/auth/client";
-import { Ed25519KeyIdentity, DelegationChain, DelegationIdentity } from "@icp-sdk/core/identity";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
 
-export interface TokenInfo {
-  valid: boolean;
-  expiry: Date | null;
-  principal: string | null;
-  isExpired: boolean;
+const STORAGE_KEY_IDENTITY = "hyvmind-plugin-key";
+
+export interface BindingStorage {
+  getBindingData(): string | null;
+  setBindingData(data: string): void;
+  clearBindingData(): void;
 }
 
-export interface TokenStorage {
-  getDelegationToken(): string | null;
-  setDelegationToken(token: string): void;
-  clearDelegationToken(): void;
+export interface BindingInfo {
+  boundUserPrincipal: string | null;
 }
 
-export class ICPAuth {
-  private client: AuthClient | null = null;
-  private identity: DelegationIdentity | null = null;
-  private _principal: Principal | null = null;
-  private isAuthenticatedFlag = false;
-  private identityProviderUrl: string;
-  private storage: TokenStorage;
+export class PluginBinding {
+  private keyIdentity: Ed25519KeyIdentity | null = null;
+  private boundUserPrincipal: string | null = null;
+  private storage: BindingStorage;
 
-  constructor(identityProviderUrl: string, storage: TokenStorage) {
-    this.identityProviderUrl = identityProviderUrl;
+  constructor(storage: BindingStorage) {
     this.storage = storage;
   }
 
-  async init(): Promise<void> {
-    const storedToken = this.storage.getDelegationToken();
+  getOrCreateIdentity(): Ed25519KeyIdentity {
+    if (this.keyIdentity) return this.keyIdentity;
 
-    if (storedToken) {
+    const stored = this.storage.getBindingData();
+    if (stored) {
       try {
-        const parsed = JSON.parse(storedToken);
-
-        if (parsed.identity && parsed.delegation) {
-          const key = Ed25519KeyIdentity.fromJSON(parsed.identity);
-          const chain = DelegationChain.fromJSON(parsed.delegation);
-          const identity = DelegationIdentity.fromDelegation(key, chain);
-
-          const expiry = this.getChainExpiry(identity);
-          if (!expiry || expiry > new Date()) {
-            this.identity = identity;
-            this._principal = identity.getPrincipal();
-            this.isAuthenticatedFlag = true;
-            return;
-          }
+        const parsed = JSON.parse(stored);
+        if (parsed.identity) {
+          this.keyIdentity = Ed25519KeyIdentity.fromJSON(parsed.identity);
         }
-      } catch (err) {
-        console.warn("Failed to restore token, will need to re-import:", err);
+        if (parsed.boundUser) {
+          this.boundUserPrincipal = parsed.boundUser;
+        }
+      } catch {
+        // Stored data is corrupt, generate fresh
       }
     }
 
-    this.client = await AuthClient.create();
-  }
-
-  async importDelegationToken(tokenJson: string): Promise<DelegationIdentity> {
-    const parsed = JSON.parse(tokenJson);
-
-    if (parsed.identity && parsed.delegation) {
-      const key = Ed25519KeyIdentity.fromJSON(parsed.identity);
-      const chain = DelegationChain.fromJSON(parsed.delegation);
-      const identity = DelegationIdentity.fromDelegation(key, chain);
-
-      this.storage.setDelegationToken(tokenJson);
-      this.identity = identity;
-      this._principal = identity.getPrincipal();
-      this.isAuthenticatedFlag = true;
-
-      return identity;
+    if (!this.keyIdentity) {
+      this.keyIdentity = Ed25519KeyIdentity.generate();
+      this.persist();
     }
 
-    if (parsed.delegations) {
-      throw new Error(
-        "This token format is no longer supported. Please get a new token from hyvmind.app/obsidian-token"
-      );
-    }
-
-    throw new Error(
-      "Invalid token format. Expected { identity, delegation } from hyvmind.app/obsidian-token"
-    );
-  }
-
-  getTokenInfo(): TokenInfo {
-    if (!this._principal) {
-      return {
-        valid: false,
-        expiry: null,
-        principal: null,
-        isExpired: true,
-      };
-    }
-
-    const expiry = this.getChainExpiry(this.identity);
-    const isExpired = expiry ? expiry <= new Date() : false;
-
-    return {
-      valid: this.isAuthenticatedFlag && !isExpired,
-      expiry,
-      principal: this._principal.toText(),
-      isExpired,
-    };
-  }
-
-  isAuthenticated(): boolean {
-    return this.isAuthenticatedFlag;
-  }
-
-  getIdentity(): DelegationIdentity | null {
-    return this.identity;
+    return this.keyIdentity;
   }
 
   getPrincipal(): Principal | null {
-    return this._principal;
+    if (!this.keyIdentity) return null;
+    return this.keyIdentity.getPrincipal();
   }
 
-  async logout(): Promise<void> {
-    this.identity = null;
-    this._principal = null;
-    this.isAuthenticatedFlag = false;
-    this.storage.clearDelegationToken();
+  getPrincipalText(): string | null {
+    const p = this.getPrincipal();
+    return p ? p.toText() : null;
   }
 
-  setIdentityProviderUrl(url: string): void {
-    this.identityProviderUrl = url;
+  isBound(): boolean {
+    return this.boundUserPrincipal !== null;
   }
 
-  private getChainExpiry(identity: DelegationIdentity | null): Date | null {
-    if (!identity) {
-      return null;
-    }
-
-    try {
-      const chain = identity.getDelegation();
-      if (chain && chain.delegations.length > 0) {
-        const lastDel = chain.delegations[chain.delegations.length - 1];
-        if (lastDel) {
-          const expirationNs = lastDel.delegation.expiration;
-          return new Date(Number(expirationNs / BigInt(1_000_000)));
-        }
-      }
-    } catch {
-      // Fall through
-    }
-
-    return null;
-  }
-}
-
-export function getIdentityProviderUrl(customUrl?: string): string {
-  if (customUrl) {
-    return customUrl;
+  getBoundUser(): string | null {
+    return this.boundUserPrincipal;
   }
 
-  const host = window.location.hostname;
-  const isLocal = host === "localhost" || host === "127.0.0.1" || host.endsWith(".localhost");
-
-  if (isLocal) {
-    return "http://id.ai.localhost:8000";
+  setBoundUser(userPrincipal: string): void {
+    this.boundUserPrincipal = userPrincipal;
+    this.persist();
   }
-  return "https://id.ai";
+
+  clearBinding(): void {
+    this.boundUserPrincipal = null;
+    this.persist();
+  }
+
+  getIdentity(): Ed25519KeyIdentity | null {
+    return this.keyIdentity;
+  }
+
+  private persist(): void {
+    const data = JSON.stringify({
+      identity: this.keyIdentity ? JSON.stringify(this.keyIdentity.toJSON()) : null,
+      boundUser: this.boundUserPrincipal,
+    });
+    this.storage.setBindingData(data);
+  }
 }

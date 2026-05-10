@@ -1,61 +1,29 @@
-/**
- * ICP Agent and Actor creation module
- * Creates authenticated HttpAgent and actor for canister calls
- */
-
 import { HttpAgent, Actor } from "@icp-sdk/core/agent";
-import { Identity } from "@icp-sdk/core/identity";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
-import { HyvmindActor, PublishSourceGraphInput, PublishResult } from "../types/canister";
+import { HyvmindActor } from "../types/canister";
 
 const idlFactory = ({ IDL }: { IDL: IDL }) => {
-  const CustomAttribute = IDL.Record({
-    key: IDL.Text,
-    value: IDL.Text,
-  });
-
-  const SourceGraphNodeInput = IDL.Record({
-    name: IDL.Text,
-    nodeType: IDL.Text,
-    jurisdiction: IDL.Opt(IDL.Text),
-    tags: IDL.Vec(IDL.Text),
-    content: IDL.Opt(IDL.Text),
-    parentName: IDL.Opt(IDL.Text),
-    attributes: IDL.Vec(CustomAttribute),
-  });
-
-  const SourceGraphEdgeInput = IDL.Record({
-    sourceName: IDL.Text,
-    targetName: IDL.Text,
-    edgeLabel: IDL.Text,
-    bidirectional: IDL.Bool,
-  });
-
-  const PublishSourceGraphInput = IDL.Record({
-    nodes: IDL.Vec(SourceGraphNodeInput),
-    edges: IDL.Vec(SourceGraphEdgeInput),
-  });
-
-  const PublishResult = IDL.Variant({
-    success: IDL.Record({ message: IDL.Text }),
-    noChanges: IDL.Null,
-    error: IDL.Text,
-  });
-
-  const UserProfile = IDL.Record({
-    name: IDL.Text,
-    socialUrl: IDL.Opt(IDL.Text),
-  });
-
   return IDL.Service({
-    publishSourceGraph: IDL.Func([PublishSourceGraphInput], [PublishResult], []),
+    requestPluginBinding: IDL.Func([IDL.Principal, IDL.Principal], [], []),
+    getPendingPluginBindings: IDL.Func([], [IDL.Vec(IDL.Principal)], ["query"]),
+    approvePluginBinding: IDL.Func([IDL.Principal], [], []),
+    getPluginBindingStatus: IDL.Func([], [IDL.Bool], ["query"]),
+    getMyPrincipal: IDL.Func([], [IDL.Principal], ["query"]),
+    storeNotesData: IDL.Func([IDL.Text], [], []),
+    getNotesData: IDL.Func([], [IDL.Opt(IDL.Text)], ["query"]),
     initializeAccessControl: IDL.Func([], [], []),
     isCallerApproved: IDL.Func([], [IDL.Bool], ["query"]),
     requestApproval: IDL.Func([], [], []),
-    getCallerUserProfile: IDL.Func([], [IDL.Opt(UserProfile)], ["query"]),
-    saveCallerUserProfile: IDL.Func([UserProfile], [], []),
+    getCallerUserProfile: IDL.Func([], [IDL.Opt(IDL.Record({ name: IDL.Text, socialUrl: IDL.Opt(IDL.Text) }))], ["query"]),
+    saveCallerUserProfile: IDL.Func([IDL.Record({ name: IDL.Text, socialUrl: IDL.Opt(IDL.Text) })], [], []),
   });
 };
+
+function toText(p: unknown): string {
+  if (p && typeof (p as any).toText === "function") return (p as any).toText();
+  return String(p);
+}
 
 function getRootKey(): Uint8Array | undefined {
   try {
@@ -74,7 +42,7 @@ function getRootKey(): Uint8Array | undefined {
 
 export class ICPAgent {
   private agent: HttpAgent | null = null;
-  private actor: HyvmindActor | null = null;
+  private actor: any = null;
   private canisterId: string;
   private host: string;
 
@@ -83,7 +51,7 @@ export class ICPAgent {
     this.host = host;
   }
 
-  async createAuthenticatedActor(identity: Identity): Promise<HyvmindActor> {
+  async createAuthenticatedActor(identity: Ed25519KeyIdentity): Promise<void> {
     const rootKey = getRootKey();
 
     this.agent = await HttpAgent.create({
@@ -96,16 +64,14 @@ export class ICPAgent {
       await this.agent.fetchRootKey();
     }
 
-    this.actor = Actor.createActor<HyvmindActor>(idlFactory, {
+    this.actor = Actor.createActor(idlFactory, {
       agent: this.agent,
       canisterId: Principal.fromText(this.canisterId),
     });
-
-    return this.actor;
   }
 
   getActor(): HyvmindActor | null {
-    return this.actor;
+    return this.actor as HyvmindActor | null;
   }
 
   updateConfig(canisterId: string, host: string): void {
@@ -115,55 +81,62 @@ export class ICPAgent {
     this.agent = null;
   }
 
-  async publishSourceGraph(input: PublishSourceGraphInput): Promise<PublishResult> {
-    if (!this.actor) {
-      throw new Error("Actor not initialized");
-    }
+  async requestPluginBinding(pluginPubKeyText: string, userPrincipalText: string): Promise<void> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    const pluginKey = Principal.fromText(pluginPubKeyText);
+    const userPrincipal = Principal.fromText(userPrincipalText);
+    await this.actor.requestPluginBinding(pluginKey, userPrincipal);
+  }
 
-    const result = await this.actor.publishSourceGraph(input);
-    return result;
+  async getPendingPluginBindings(): Promise<string[]> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    const result: unknown[] = await this.actor.getPendingPluginBindings();
+    return result.map(toText);
+  }
+
+  async approvePluginBinding(pluginPubKeyText: string): Promise<void> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    await this.actor.approvePluginBinding(Principal.fromText(pluginPubKeyText));
+  }
+
+  async getPluginBindingStatus(): Promise<boolean> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    return await this.actor.getPluginBindingStatus();
+  }
+
+  async storeNotesData(json: string): Promise<void> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    await this.actor.storeNotesData(json);
+  }
+
+  async getNotesData(): Promise<string | null> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    const result = await this.actor.getNotesData();
+    return result ?? null;
   }
 
   async isCallerApproved(): Promise<boolean> {
-    if (!this.actor) {
-      throw new Error("Actor not initialized");
-    }
-
+    if (!this.actor) throw new Error("Actor not initialized");
     return await this.actor.isCallerApproved();
   }
 
   async initializeAccessControl(): Promise<void> {
-    if (!this.actor) {
-      throw new Error("Actor not initialized");
-    }
-
+    if (!this.actor) throw new Error("Actor not initialized");
     await this.actor.initializeAccessControl();
   }
 
   async requestApproval(): Promise<void> {
-    if (!this.actor) {
-      throw new Error("Actor not initialized");
-    }
-
+    if (!this.actor) throw new Error("Actor not initialized");
     await this.actor.requestApproval();
   }
 
   async saveUserProfile(name: string): Promise<void> {
-    if (!this.actor) {
-      throw new Error("Actor not initialized");
-    }
-
-    await this.actor.saveCallerUserProfile({
-      name,
-      socialUrl: null,
-    });
+    if (!this.actor) throw new Error("Actor not initialized");
+    await this.actor.saveCallerUserProfile({ name, socialUrl: null });
   }
 
   async getUserProfile(): Promise<{ name: string; socialUrl: string | null } | null> {
-    if (!this.actor) {
-      throw new Error("Actor not initialized");
-    }
-
+    if (!this.actor) throw new Error("Actor not initialized");
     return await this.actor.getCallerUserProfile();
   }
 }

@@ -1,6 +1,7 @@
 interface IDL {
   Text: unknown;
   Nat: unknown;
+  Principal: unknown;
   Nat8: unknown;
   Nat16: unknown;
   Nat32: unknown;

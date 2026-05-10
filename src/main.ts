@@ -1,36 +1,32 @@
-/**
- * Hyvmind Uploader Plugin for Obsidian
- * Uploads folders to Hyvmind ICP app as source graphs
- */
-
 import { Plugin, TFolder, TAbstractFile, Notice, Menu, Modal, App } from "obsidian";
 import { HyvmindSettings, DEFAULT_SETTINGS, HyvmindSettingTab } from "./settings";
-import { ICPAuth, TokenStorage } from "./icp/auth";
+import { PluginBinding, BindingStorage } from "./icp/auth";
 import { ICPAgent } from "./icp/agent";
 import { FolderUploader } from "./icp/uploader";
 import { ConnectionStatusBar } from "./ui/status-bar";
 
-class PluginTokenStorage implements TokenStorage {
+class PluginBindingStorage implements BindingStorage {
   constructor(private plugin: HyvmindPlugin) {}
 
-  getDelegationToken(): string | null {
-    return this.plugin.settings.delegationToken || null;
+  getBindingData(): string | null {
+    return this.plugin.settings.bindingData || null;
   }
 
-  setDelegationToken(token: string): void {
-    this.plugin.settings.delegationToken = token;
+  setBindingData(data: string): void {
+    this.plugin.settings.bindingData = data;
     void this.plugin.saveSettings();
   }
 
-  clearDelegationToken(): void {
-    this.plugin.settings.delegationToken = "";
+  clearBindingData(): void {
+    this.plugin.settings.bindingData = "";
+    this.plugin.settings.principal = null;
     void this.plugin.saveSettings();
   }
 }
 
 export default class HyvmindPlugin extends Plugin {
   settings!: HyvmindSettings;
-  auth!: ICPAuth;
+  binding!: PluginBinding;
   agent!: ICPAgent;
   uploader!: FolderUploader;
   statusBar!: ConnectionStatusBar;
@@ -38,18 +34,16 @@ export default class HyvmindPlugin extends Plugin {
   async onload() {
     await this.loadSettings();
 
-    const tokenStorage = new PluginTokenStorage(this);
-    this.auth = new ICPAuth(this.settings.identityProviderUrl, tokenStorage);
+    const bindingStorage = new PluginBindingStorage(this);
+    this.binding = new PluginBinding(bindingStorage);
     this.agent = new ICPAgent(this.settings.canisterId, this.settings.host);
     this.uploader = new FolderUploader(this.app.vault, this.agent);
 
-    await this.auth.init();
+    const identity = this.binding.getOrCreateIdentity();
+    await this.agent.createAuthenticatedActor(identity);
 
-    if (this.auth.isAuthenticated()) {
-      const identity = this.auth.getIdentity();
-      if (identity) {
-        await this.agent.createAuthenticatedActor(identity);
-      }
+    if (this.binding.isBound()) {
+      this.settings.principal = this.binding.getBoundUser();
     }
 
     this.addSettingTab(new HyvmindSettingTab(this.app, this));
@@ -60,14 +54,6 @@ export default class HyvmindPlugin extends Plugin {
 
     this.addRibbonIcon("upload-cloud", "Hyvmind uploader", () => {
       this.showUploadMenu();
-    });
-
-    this.addCommand({
-      id: "disconnect-from-icp",
-      name: "Disconnect from ICP",
-      callback: () => {
-        void this.disconnectFromICP();
-      },
     });
 
     this.addCommand({
@@ -114,28 +100,12 @@ export default class HyvmindPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
-    this.auth.setIdentityProviderUrl(this.settings.identityProviderUrl);
     this.agent.updateConfig(this.settings.canisterId, this.settings.host);
-  }
-
-  private async disconnectFromICP(): Promise<void> {
-    if (!this.auth.isAuthenticated()) {
-      new Notice("Not connected to ICP");
-      return;
-    }
-
-    await this.auth.logout();
-    this.settings.delegationToken = "";
-    this.settings.principal = null;
-    await this.saveSettings();
-    this.agent.updateConfig(this.settings.canisterId, this.settings.host);
-    this.updateStatusBar();
-    new Notice("Disconnected from ICP");
   }
 
   private async uploadFolder(folder: TFolder): Promise<void> {
-    if (!this.auth.isAuthenticated()) {
-      new Notice("Please import a token in settings to authenticate first");
+    if (!this.binding.isBound()) {
+      new Notice("Please bind the plugin to your hyvmind account in settings first");
       return;
     }
 
@@ -162,9 +132,9 @@ export default class HyvmindPlugin extends Plugin {
   }
 
   private updateStatusBar(): void {
-    if (this.auth.isAuthenticated()) {
-      const principal = this.auth.getPrincipal()?.toText() || this.settings.principal;
-      this.statusBar.setConnected(principal);
+    if (this.binding.isBound()) {
+      const user = this.binding.getBoundUser();
+      this.statusBar.setConnected(user ? user.slice(0, 8) : "bound");
     } else {
       this.statusBar.setDisconnected();
     }
@@ -177,18 +147,7 @@ export default class HyvmindPlugin extends Plugin {
   private showUploadMenu(): void {
     const menu = new Menu();
 
-    if (this.auth.isAuthenticated()) {
-      menu.addItem((item) =>
-        item
-          .setTitle("Disconnect from ICP")
-          .setIcon("log-out")
-          .onClick(() => {
-            void this.disconnectFromICP();
-          })
-      );
-
-      menu.addSeparator();
-
+    if (this.binding.isBound()) {
       menu.addItem((item) =>
         item
           .setTitle("Upload current folder")
@@ -205,11 +164,10 @@ export default class HyvmindPlugin extends Plugin {
     } else {
       menu.addItem((item) =>
         item
-          .setTitle("Authenticate in settings")
+          .setTitle("Configure binding in settings")
           .setIcon("settings")
           .onClick(() => {
-            // This will open the settings tab - user needs to import token there
-            new Notice("Please import a token in the hyvmind settings");
+            new Notice("Please bind the plugin in hyvmind settings first");
           })
       );
     }
