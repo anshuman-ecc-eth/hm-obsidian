@@ -124,6 +124,7 @@ export default class HyvmindPlugin extends Plugin {
 
       if (result.success) {
         new Notice(`✓ ${result.message}`);
+        window.open("https://hyvmind.app", "_blank");
       } else {
         new Notice(`✗ ${result.message}`);
       }
