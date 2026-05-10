@@ -100,7 +100,7 @@ export default class HyvmindPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
-    this.agent.updateConfig(this.settings.canisterId, this.settings.host);
+    // Only recreate agent when canisterId or host changes (rare)
   }
 
   private async uploadFolder(folder: TFolder): Promise<void> {
