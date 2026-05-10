@@ -144,6 +144,34 @@ export class HyvmindSettingTab extends PluginSettingTab {
       new Notice("Binding removed");
     });
 
+    new Setting(containerEl)
+      .setName("Manual bind")
+      .setDesc("If auto-check fails, paste your principal here and confirm")
+      .addText((text) =>
+        text
+          .setPlaceholder("h5a4-...-cai")
+          .setValue(this.plugin.settings.userPrincipal)
+          .onChange((value) => {
+            this.plugin.settings.userPrincipal = value.trim();
+            void this.plugin.saveSettings();
+          })
+      );
+
+    const manualBindBtn = new ButtonComponent(btnContainer);
+    manualBindBtn.setButtonText("Confirm binding manually");
+    manualBindBtn.onClick(() => {
+      const principal = this.plugin.settings.userPrincipal;
+      if (!principal) {
+        new Notice("Enter your hyvmind principal first");
+        return;
+      }
+      this.plugin.binding.persistBoundUser(principal);
+      this.plugin.settings.principal = principal;
+      void this.plugin.saveSettings();
+      this.updateBindingStatus();
+      new Notice("Binding confirmed manually");
+    });
+
     new Setting(containerEl).setHeading().setName("Environment presets");
 
     const presetContainer = containerEl.createDiv({ cls: "hyvmind-preset-container" });
