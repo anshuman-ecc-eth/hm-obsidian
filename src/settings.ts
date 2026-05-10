@@ -16,7 +16,7 @@ export interface HyvmindSettings {
 }
 
 export const DEFAULT_SETTINGS: HyvmindSettings = {
-  canisterId: "019b8930-ebee-7341-a82a-915c8016db5d",
+  canisterId: "4p5ty-yyaaa-aaaam-qfana-cai",
   identityProviderUrl: "https://id.ai",
   host: "https://icp-api.io",
   userName: "",

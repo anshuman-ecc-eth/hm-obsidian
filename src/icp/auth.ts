@@ -57,12 +57,10 @@ export class ICPAuth {
 
     if (storedToken) {
       try {
-        const tokenData = JSON.parse(storedToken);
-
     const customStorage: AuthClientStorage = {
       get: (key: string) => {
         if (key === KEY_DELEGATION) {
-          return Promise.resolve(tokenData);
+          return Promise.resolve(storedToken);
         }
         return Promise.resolve(null);
       },
@@ -105,7 +103,7 @@ export class ICPAuth {
     const customStorage: AuthClientStorage = {
       get: (key: string) => {
         if (key === KEY_DELEGATION) {
-          return Promise.resolve(parsed);
+          return Promise.resolve(tokenJson);
         }
         return Promise.resolve(null);
       },
