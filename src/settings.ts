@@ -156,7 +156,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
       .setDesc("Paste your delegation token JSON here")
       .addTextArea((ta) => {
         ta.inputEl.rows = 4;
-        ta.setPlaceholder('Paste your token here ({"delegations":...})');
+        ta.setPlaceholder('Paste your token here ({"identity":...,"delegation":...})');
         ta.setValue(this.plugin.settings.delegationToken);
         ta.onChange((value) => {
           this.plugin.settings.delegationToken = value.trim();

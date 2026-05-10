@@ -71,6 +71,44 @@ declare module "@icp-sdk/core/identity" {
   export class AnonymousIdentity extends Identity {
     getPrincipal(): import("@icp-sdk/core/principal").Principal;
   }
+
+  export class Ed25519KeyIdentity extends SignIdentity {
+    static generate(seed?: Uint8Array): Ed25519KeyIdentity;
+    static fromJSON(json: string): Ed25519KeyIdentity;
+    static fromParsedJson(obj: [string, string]): Ed25519KeyIdentity;
+    toJSON(): [string, string];
+    getKeyPair(): { publicKey: unknown; privateKey: unknown };
+    getPublicKey(): unknown;
+    sign(challenge: Uint8Array): Promise<unknown>;
+  }
+
+  export class Delegation {
+    readonly pubkey: Uint8Array;
+    readonly expiration: bigint;
+    readonly targets?: import("@icp-sdk/core/principal").Principal[];
+    constructor(pubkey: Uint8Array, expiration: bigint, targets?: import("@icp-sdk/core/principal").Principal[]);
+  }
+
+  export interface SignedDelegation {
+    delegation: Delegation;
+    signature: Uint8Array;
+  }
+
+  export class DelegationChain {
+    readonly delegations: SignedDelegation[];
+    readonly publicKey: Uint8Array;
+    static fromJSON(json: string | Record<string, unknown>): DelegationChain;
+    static fromDelegations(delegations: SignedDelegation[], publicKey: Uint8Array): DelegationChain;
+    toJSON(): Record<string, unknown>;
+  }
+
+  export class DelegationIdentity extends SignIdentity {
+    static fromDelegation(key: SignIdentity | unknown, delegation: DelegationChain): DelegationIdentity;
+    getDelegation(): DelegationChain;
+    getPublicKey(): unknown;
+    sign(blob: Uint8Array): Promise<unknown>;
+    transformRequest(request: unknown): Promise<unknown>;
+  }
 }
 
 declare module "@icp-sdk/core/principal" {

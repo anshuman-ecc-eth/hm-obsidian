@@ -1,30 +1,6 @@
-/**
- * Internet Identity authentication module
- * Handles login/logout and manual token import/export
- */
-
 import { AuthClient } from "@icp-sdk/auth/client";
-import { Identity } from "@icp-sdk/core/identity";
+import { Ed25519KeyIdentity, DelegationChain, DelegationIdentity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
-
-const KEY_DELEGATION = "delegation";
-
-interface AuthClientStorage {
-  get(key: string): Promise<unknown>;
-  set(key: string, value: unknown): Promise<void>;
-  remove(key: string): Promise<void>;
-}
-
-interface DelegationInfo {
-  delegations: Array<{
-    delegation: {
-      pubkey: Uint8Array;
-      expiration: bigint;
-      targets?: Principal[];
-    };
-    signature: Uint8Array;
-  }>;
-}
 
 export interface TokenInfo {
   valid: boolean;
@@ -41,8 +17,8 @@ export interface TokenStorage {
 
 export class ICPAuth {
   private client: AuthClient | null = null;
-  private identity: Identity | null = null;
-  private principal: Principal | null = null;
+  private identity: DelegationIdentity | null = null;
+  private _principal: Principal | null = null;
   private isAuthenticatedFlag = false;
   private identityProviderUrl: string;
   private storage: TokenStorage;
@@ -57,31 +33,20 @@ export class ICPAuth {
 
     if (storedToken) {
       try {
-    const customStorage: AuthClientStorage = {
-      get: (key: string) => {
-        if (key === KEY_DELEGATION) {
-          return Promise.resolve(storedToken);
-        }
-        return Promise.resolve(null);
-      },
-      set: () => {
-        // Storage is handled by the plugin settings, no-op here
-        return Promise.resolve();
-      },
-      remove: () => {
-        // Storage is handled by the plugin settings, no-op here
-        return Promise.resolve();
-      },
-    };
+        const parsed = JSON.parse(storedToken);
 
-        this.client = await AuthClient.create({ storage: customStorage });
+        if (parsed.identity && parsed.delegation) {
+          const key = Ed25519KeyIdentity.fromJSON(parsed.identity);
+          const chain = DelegationChain.fromJSON(parsed.delegation);
+          const identity = DelegationIdentity.fromDelegation(key, chain);
 
-        const isAuth = await this.client.isAuthenticated();
-        if (isAuth) {
-          this.identity = this.client.getIdentity();
-          this.principal = this.identity.getPrincipal();
-          this.isAuthenticatedFlag = true;
-          return;
+          const expiry = this.getChainExpiry(identity);
+          if (!expiry || expiry > new Date()) {
+            this.identity = identity;
+            this._principal = identity.getPrincipal();
+            this.isAuthenticatedFlag = true;
+            return;
+          }
         }
       } catch (err) {
         console.warn("Failed to restore token, will need to re-import:", err);
@@ -91,48 +56,35 @@ export class ICPAuth {
     this.client = await AuthClient.create();
   }
 
-  async importDelegationToken(tokenJson: string): Promise<Identity> {
+  async importDelegationToken(tokenJson: string): Promise<DelegationIdentity> {
     const parsed = JSON.parse(tokenJson);
 
-    if (!parsed || !parsed.delegations) {
-      throw new Error("Invalid delegation token format");
+    if (parsed.identity && parsed.delegation) {
+      const key = Ed25519KeyIdentity.fromJSON(parsed.identity);
+      const chain = DelegationChain.fromJSON(parsed.delegation);
+      const identity = DelegationIdentity.fromDelegation(key, chain);
+
+      this.storage.setDelegationToken(tokenJson);
+      this.identity = identity;
+      this._principal = identity.getPrincipal();
+      this.isAuthenticatedFlag = true;
+
+      return identity;
     }
 
-    this.storage.setDelegationToken(tokenJson);
-
-    const customStorage: AuthClientStorage = {
-      get: (key: string) => {
-        if (key === KEY_DELEGATION) {
-          return Promise.resolve(tokenJson);
-        }
-        return Promise.resolve(null);
-      },
-      set: () => {
-        // Storage is handled by the plugin settings, no-op here
-        return Promise.resolve();
-      },
-      remove: () => {
-        // Storage is handled by the plugin settings, no-op here
-        return Promise.resolve();
-      },
-    };
-
-    this.client = await AuthClient.create({ storage: customStorage });
-
-    const isAuth = await this.client.isAuthenticated();
-    if (!isAuth) {
-      throw new Error("Failed to authenticate with provided token");
+    if (parsed.delegations) {
+      throw new Error(
+        "This token format is no longer supported. Please get a new token from hyvmind.app/obsidian-token"
+      );
     }
 
-    this.identity = this.client.getIdentity();
-    this.principal = this.identity.getPrincipal();
-    this.isAuthenticatedFlag = true;
-
-    return this.identity;
+    throw new Error(
+      "Invalid token format. Expected { identity, delegation } from hyvmind.app/obsidian-token"
+    );
   }
 
   getTokenInfo(): TokenInfo {
-    if (!this.client || !this.principal) {
+    if (!this._principal) {
       return {
         valid: false,
         expiry: null,
@@ -141,27 +93,13 @@ export class ICPAuth {
       };
     }
 
-    let expiry: Date | null = null;
-    let isExpired = true;
-
-    try {
-      const chain = (this.client as unknown as { _chain?: DelegationInfo })._chain;
-      if (chain && chain.delegations && chain.delegations.length > 0) {
-        const lastDel = chain.delegations[chain.delegations.length - 1];
-        if (lastDel && lastDel.delegation) {
-          const expirationNs = lastDel.delegation.expiration;
-          expiry = new Date(Number(expirationNs / BigInt(1_000_000)));
-          isExpired = expiry < new Date();
-        }
-      }
-    } catch {
-      isExpired = true;
-    }
+    const expiry = this.getChainExpiry(this.identity);
+    const isExpired = expiry ? expiry <= new Date() : false;
 
     return {
       valid: this.isAuthenticatedFlag && !isExpired,
       expiry,
-      principal: this.principal.toText(),
+      principal: this._principal.toText(),
       isExpired,
     };
   }
@@ -170,26 +108,44 @@ export class ICPAuth {
     return this.isAuthenticatedFlag;
   }
 
-  getIdentity(): Identity | null {
+  getIdentity(): DelegationIdentity | null {
     return this.identity;
   }
 
   getPrincipal(): Principal | null {
-    return this.principal;
+    return this._principal;
   }
 
   async logout(): Promise<void> {
-    if (this.client) {
-      await this.client.logout();
-    }
     this.identity = null;
-    this.principal = null;
+    this._principal = null;
     this.isAuthenticatedFlag = false;
     this.storage.clearDelegationToken();
   }
 
   setIdentityProviderUrl(url: string): void {
     this.identityProviderUrl = url;
+  }
+
+  private getChainExpiry(identity: DelegationIdentity | null): Date | null {
+    if (!identity) {
+      return null;
+    }
+
+    try {
+      const chain = identity.getDelegation();
+      if (chain && chain.delegations.length > 0) {
+        const lastDel = chain.delegations[chain.delegations.length - 1];
+        if (lastDel) {
+          const expirationNs = lastDel.delegation.expiration;
+          return new Date(Number(expirationNs / BigInt(1_000_000)));
+        }
+      }
+    } catch {
+      // Fall through
+    }
+
+    return null;
   }
 }
 
