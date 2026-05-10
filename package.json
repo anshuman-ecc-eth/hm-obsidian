@@ -1,6 +1,6 @@
 {
 	"name": "hyvmind-uploader",
-	"version": "1.0.0",
+	"version": "1.2.0",
 	"description": "Upload Obsidian folders to Hyvmind ICP app as source graphs.",
 	"main": "main.js",
 	"type": "module",
