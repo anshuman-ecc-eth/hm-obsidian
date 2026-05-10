@@ -10,14 +10,9 @@ export interface UploadProgress {
 
 export type UploadCallback = (progress: UploadProgress) => void;
 
-interface FileItem {
-  name: string;
-  content?: string;
-}
-
 interface FolderItem {
   name: string;
-  files?: FileItem[];
+  content?: string;
   folders?: FolderItem[];
 }
 
@@ -72,29 +67,31 @@ export class FolderUploader {
   }
 
   private async scanFolder(folder: TFolder): Promise<FolderItem> {
-    const fileItems: FileItem[] = [];
-    const folderItems: FolderItem[] = [];
+    const children: FolderItem[] = [];
 
     for (const child of folder.children) {
       if (child instanceof TFolder) {
         const sub = await this.scanFolder(child);
-        folderItems.push(sub);
+        children.push(sub);
       } else if (child instanceof TFile && child.extension === "md") {
         const content = await this.vault.cachedRead(child);
-        fileItems.push({ name: child.basename, content });
+        children.push({ name: child.basename, content });
       }
     }
 
-    const result: FolderItem = { name: folder.name || "" };
-    if (fileItems.length > 0) result.files = fileItems;
-    if (folderItems.length > 0) result.folders = folderItems;
-    return result;
+    return {
+      name: folder.name || "",
+      folders: children.length > 0 ? children : undefined,
+    };
   }
 
   private countFiles(item: FolderItem): number {
-    let count = item.files?.length ?? 0;
-    for (const sub of item.folders ?? []) {
-      count += this.countFiles(sub);
+    let count = 0;
+    for (const child of item.folders ?? []) {
+      if (child.content !== undefined) {
+        count++;
+      }
+      count += this.countFiles(child);
     }
     return count;
   }
