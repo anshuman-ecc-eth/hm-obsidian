@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: HyvmindSettings = {
 export class HyvmindSettingTab extends PluginSettingTab {
   plugin: HyvmindPlugin;
   private bindingStatusEl!: HTMLElement;
+  private staleBindingsEl!: HTMLElement;
 
   constructor(app: App, plugin: HyvmindPlugin) {
     super(app, plugin);
@@ -132,17 +133,24 @@ export class HyvmindSettingTab extends PluginSettingTab {
       void this.handleRefreshBinding();
     });
 
-    const unbindBtn = new ButtonComponent(btnContainer);
-    unbindBtn.setButtonText("Unbind");
-    unbindBtn.setWarning();
-    unbindBtn.onClick(() => {
+    const clearBtn = new ButtonComponent(btnContainer);
+    clearBtn.setButtonText("Clear local binding");
+    clearBtn.setWarning();
+    clearBtn.onClick(() => {
       this.plugin.binding.clearBinding();
-      this.plugin.settings.bindingData = "";
       this.plugin.settings.principal = null;
       void this.plugin.saveSettings();
       this.updateBindingStatus();
-      new Notice("Binding removed");
+      new Notice("Local binding cleared (identity preserved)");
     });
+
+    const staleBtn = new ButtonComponent(btnContainer);
+    staleBtn.setButtonText("Check stale bindings");
+    staleBtn.onClick(() => {
+      void this.handleCheckStaleBindings();
+    });
+
+    this.addStaleBindingsUI(containerEl);
 
     new Setting(containerEl)
       .setName("Manual bind")
@@ -236,6 +244,67 @@ export class HyvmindSettingTab extends PluginSettingTab {
     } catch (err) {
       new Notice(
         `Failed to check binding: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  private addStaleBindingsUI(containerEl: HTMLElement): void {
+    new Setting(containerEl)
+      .setName("Stale plugin keys")
+      .setDesc("Old plugin keys still bound to your account on the backend");
+
+    this.staleBindingsEl = containerEl.createEl("div", {
+      cls: "hyvmind-token-status",
+    });
+    this.staleBindingsEl.setText("Click 'Check stale bindings' above");
+  }
+
+  private async handleCheckStaleBindings(): Promise<void> {
+    try {
+      const boundKeys = await this.plugin.agent.getBoundPluginKeys();
+      const currentKey = this.plugin.binding.getPrincipalText();
+      const staleKeys = currentKey
+        ? boundKeys.filter((k) => k !== currentKey)
+        : boundKeys;
+
+      this.staleBindingsEl.empty();
+
+      if (staleKeys.length === 0) {
+        const span = this.staleBindingsEl.createEl("span", { cls: "hyvmind-status hyvmind-status-valid" });
+        span.setText("No stale bindings found");
+        return;
+      }
+
+      for (const key of staleKeys) {
+        const row = this.staleBindingsEl.createDiv({ cls: "hyvmind-stale-key-row" });
+        row.createEl("span", {
+          text: key.slice(0, 16) + "...",
+          cls: "hyvmind-stale-key-text",
+          attr: { title: key },
+        });
+
+        const revokeBtn = new ButtonComponent(row);
+        revokeBtn.setButtonText("Revoke");
+        revokeBtn.setWarning();
+        revokeBtn.onClick(() => {
+          void this.handleRevokeBinding(key, row);
+        });
+      }
+    } catch (err) {
+      new Notice(
+        `Failed to check stale bindings: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  private async handleRevokeBinding(pluginKey: string, rowEl: HTMLElement): Promise<void> {
+    try {
+      await this.plugin.agent.revokePluginBinding(pluginKey);
+      rowEl.remove();
+      new Notice("Stale binding revoked");
+    } catch (err) {
+      new Notice(
+        `Failed to revoke binding: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }

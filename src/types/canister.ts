@@ -14,6 +14,8 @@ export interface HyvmindActor {
   approvePluginBinding(pluginPubKey: string): Promise<void>;
   getPluginBindingStatus(): Promise<boolean>;
   getMyPrincipal(): Promise<string>;
+  getBoundPluginKeys(): Promise<string[]>;
+  revokePluginBinding(pluginKey: string): Promise<void>;
   storeNotesData(json: string): Promise<void>;
   getNotesData(): Promise<string | null>;
   initializeAccessControl(): Promise<void>;

@@ -9,6 +9,8 @@ const idlFactory = ({ IDL }: { IDL: IDL }) => {
     getPendingPluginBindings: IDL.Func([], [IDL.Vec(IDL.Principal)], ["query"]),
     approvePluginBinding: IDL.Func([IDL.Principal], [], []),
     getPluginBindingStatus: IDL.Func([], [IDL.Bool], ["query"]),
+    getBoundPluginKeys: IDL.Func([], [IDL.Vec(IDL.Principal)], ["query"]),
+    revokePluginBinding: IDL.Func([IDL.Principal], [], []),
     getMyPrincipal: IDL.Func([], [IDL.Principal], ["query"]),
     storeNotesData: IDL.Func([IDL.Text], [], []),
     getNotesData: IDL.Func([], [IDL.Opt(IDL.Text)], ["query"]),
@@ -102,6 +104,17 @@ export class ICPAgent {
   async getPluginBindingStatus(): Promise<boolean> {
     if (!this.actor) throw new Error("Actor not initialized");
     return await this.actor.getPluginBindingStatus();
+  }
+
+  async getBoundPluginKeys(): Promise<string[]> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    const result: unknown[] = await this.actor.getBoundPluginKeys();
+    return result.map(toText);
+  }
+
+  async revokePluginBinding(pluginKeyText: string): Promise<void> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    await this.actor.revokePluginBinding(Principal.fromText(pluginKeyText));
   }
 
   async storeNotesData(json: string): Promise<void> {
