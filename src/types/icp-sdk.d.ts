@@ -104,7 +104,7 @@ declare module "@icp-sdk/core/identity" {
   }
 
   export class DelegationIdentity extends SignIdentity {
-    static fromDelegation(key: SignIdentity | unknown, delegation: DelegationChain): DelegationIdentity;
+    static fromDelegation(key: SignIdentity, delegation: DelegationChain): DelegationIdentity;
     getDelegation(): DelegationChain;
     getPublicKey(): unknown;
     sign(blob: Uint8Array): Promise<unknown>;

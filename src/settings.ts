@@ -49,8 +49,8 @@ export class HyvmindSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("ICP host")
-      .setDesc("ICP network host (use http://localhost:8000 for local development)")
+      .setName("Host")
+      .setDesc("Network host")
       .addText((text) =>
         text
           .setPlaceholder("https://icp-api.io")
@@ -61,7 +61,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(containerEl).setHeading().setName("Plugin Binding");
+    new Setting(containerEl).setHeading().setName("Plugin binding");
 
     const descEl = containerEl.createEl("div", { cls: "hyvmind-auth-desc" });
     descEl.createEl("p", {
@@ -70,10 +70,10 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Your hyvmind principal")
-      .setDesc("Copy this from hyvmind.app Settings → Plugin Binding")
+      .setDesc("Copy this from hyvmind.app settings → plugin binding")
       .addText((text) =>
         text
-          .setPlaceholder("e.g. h5a4-...-cai")
+          .setPlaceholder("Your principal ID")
           .setValue(this.plugin.settings.userPrincipal)
           .onChange((value) => {
             this.plugin.settings.userPrincipal = value.trim();
@@ -127,12 +127,14 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     this.addStaleBindingsUI(containerEl);
 
+    this.addPrivacySection(containerEl);
+
     new Setting(containerEl)
-      .setName("Manual bind")
+      .setName("Manual binding")
       .setDesc("If auto-check fails, paste your principal here and confirm")
       .addText((text) =>
         text
-          .setPlaceholder("h5a4-...-cai")
+          .setPlaceholder("Your principal ID")
           .setValue(this.plugin.settings.userPrincipal)
           .onChange((value) => {
             this.plugin.settings.userPrincipal = value.trim();
@@ -194,12 +196,21 @@ export class HyvmindSettingTab extends PluginSettingTab {
         identity.getPrincipal().toText(),
         userPrincipal,
       );
-      new Notice("Binding request sent! Approve it in hyvmind.app Settings");
+      new Notice("Binding request sent! Approve it in hyvmind.app settings");
     } catch (err) {
       new Notice(
         `Failed to request binding: ${err instanceof Error ? err.message : String(err)}`
       );
     }
+  }
+
+  private addPrivacySection(containerEl: HTMLElement): void {
+    containerEl.createEl("hr");
+    new Setting(containerEl).setName("Privacy notice").setHeading();
+    containerEl.createEl("p", {
+      text: "Folder contents are sent to the hyvmind backend",
+      cls: "hyvmind-privacy-notice",
+    });
   }
 
   private addStaleBindingsUI(containerEl: HTMLElement): void {
@@ -210,7 +221,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
     this.staleBindingsEl = containerEl.createEl("div", {
       cls: "hyvmind-token-status",
     });
-    this.staleBindingsEl.setText("Click 'Check stale bindings' above");
+    this.staleBindingsEl.setText("Click 'check stale bindings' above");
   }
 
   private async handleCheckStaleBindings(): Promise<void> {

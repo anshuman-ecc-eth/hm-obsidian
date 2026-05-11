@@ -9,13 +9,13 @@ export interface FolderEntry {
 }
 
 export interface HyvmindActor {
-  requestPluginBinding(pluginPubKey: string, forPrincipal: string): Promise<void>;
-  getPendingPluginBindings(): Promise<string[]>;
-  approvePluginBinding(pluginPubKey: string): Promise<void>;
+  requestPluginBinding(pluginPubKey: unknown, forPrincipal: unknown): Promise<void>;
+  getPendingPluginBindings(): Promise<unknown[]>;
+  approvePluginBinding(pluginPubKey: unknown): Promise<void>;
   getPluginBindingStatus(): Promise<boolean>;
-  getMyPrincipal(): Promise<string>;
-  getBoundPluginKeys(): Promise<string[]>;
-  revokePluginBinding(pluginKey: string): Promise<void>;
+  getMyPrincipal(): Promise<unknown>;
+  getBoundPluginKeys(): Promise<unknown[]>;
+  revokePluginBinding(pluginKey: unknown): Promise<void>;
   storeNotesData(json: string): Promise<void>;
   getNotesData(): Promise<string | null>;
   initializeAccessControl(): Promise<void>;

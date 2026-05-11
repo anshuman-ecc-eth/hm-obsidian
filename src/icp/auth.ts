@@ -1,8 +1,6 @@
 import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
 
-const STORAGE_KEY_IDENTITY = "hyvmind-plugin-key";
-
 export interface BindingStorage {
   getBindingData(): string | null;
   setBindingData(data: string): void;
@@ -28,7 +26,7 @@ export class PluginBinding {
     const stored = this.storage.getBindingData();
     if (stored) {
       try {
-        const parsed = JSON.parse(stored);
+        const parsed: { identity?: string; boundUser?: string } = JSON.parse(stored) as { identity?: string; boundUser?: string };
         if (parsed.identity) {
           this.keyIdentity = Ed25519KeyIdentity.fromJSON(parsed.identity);
         }

@@ -3,6 +3,7 @@ import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
 import { HyvmindActor } from "../types/canister";
 
+// eslint-disable-next-line no-undef
 const idlFactory = ({ IDL }: { IDL: IDL }) => {
   return IDL.Service({
     requestPluginBinding: IDL.Func([IDL.Principal, IDL.Principal], [], []),
@@ -23,7 +24,7 @@ const idlFactory = ({ IDL }: { IDL: IDL }) => {
 };
 
 function toText(p: unknown): string {
-  if (p && typeof (p as any).toText === "function") return (p as any).toText();
+  if (p && typeof (p as { toText(): string }).toText === "function") return (p as { toText(): string }).toText();
   return String(p);
 }
 
@@ -44,7 +45,7 @@ function getRootKey(): Uint8Array | undefined {
 
 export class ICPAgent {
   private agent: HttpAgent | null = null;
-  private actor: any = null;
+  private actor: HyvmindActor | null = null;
   private canisterId: string;
   private host: string;
 
@@ -73,7 +74,7 @@ export class ICPAgent {
   }
 
   getActor(): HyvmindActor | null {
-    return this.actor as HyvmindActor | null;
+    return this.actor;
   }
 
   updateConfig(canisterId: string, host: string): void {
