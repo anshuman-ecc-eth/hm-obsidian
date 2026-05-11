@@ -52,16 +52,6 @@
   margin-top: 1rem;
 }
 
-.hyvmind-preset-btn {
-  margin-right: 0.5rem;
-}
-
-/* Focus styles for accessibility */
-.hyvmind-preset-btn:focus-visible {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: 2px;
-}
-
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .hyvmind-progress-bar {
@@ -84,25 +74,10 @@
    Authentication Settings Styles
    ======================================== */
 
-.hyvmind-confirm-buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-}
-
 .hyvmind-auth-desc {
   font-size: var(--font-ui-small);
   color: var(--text-muted);
   margin-bottom: 1rem;
-}
-
-.hyvmind-auth-note {
-  font-size: var(--font-ui-small);
-  color: var(--text-muted);
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background-color: var(--background-secondary);
-  border-radius: var(--radius-s);
 }
 
 .hyvmind-auth-buttons {
@@ -110,45 +85,6 @@
   gap: 0.5rem;
   margin-top: 0.5rem;
   margin-bottom: 1rem;
-}
-
-.hyvmind-auth-btn {
-  padding: 0.4rem 0.8rem;
-  border-radius: var(--button-radius);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-}
-
-.hyvmind-import-btn {
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border: none;
-}
-
-.hyvmind-import-btn:hover {
-  background-color: var(--interactive-accent-hover);
-}
-
-.hyvmind-help-btn {
-  background-color: var(--background-secondary);
-  color: var(--text-muted);
-  border: 1px solid var(--background-modifier-border);
-}
-
-.hyvmind-help-btn:hover {
-  background-color: var(--background-modifier-hover);
-}
-
-.hyvmind-delete-btn {
-  background-color: var(--background-secondary);
-  color: var(--text-muted);
-  border: 1px solid var(--background-modifier-border);
-}
-
-.hyvmind-delete-btn:hover {
-  background-color: var(--background-modifier-error);
-  color: var(--text-on-accent);
-  border-color: var(--background-modifier-error);
 }
 
 .hyvmind-token-status {
@@ -166,38 +102,8 @@
   color: var(--text-success);
 }
 
-.hyvmind-status-expired {
-  color: var(--text-warning);
-}
-
 .hyvmind-status-none {
   color: var(--text-muted);
 }
 
-.hyvmind-principal {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--font-ui-smaller);
-}
 
-textarea.hyvmind-token-input {
-  font-family: var(--font-mono);
-  font-size: var(--font-ui-smaller);
-}
-
-/* ========================================
-   Token Modal Styles
-   ======================================== */
-
-.hyvmind-code-block {
-  background-color: var(--background-secondary);
-  padding: 0.5rem;
-  border-radius: var(--radius-s);
-  font-family: var(--font-mono);
-  font-size: var(--font-ui-small);
-  overflow-x: auto;
-}
-
-.hyvmind-modal-close {
-  margin-top: 16px;
-}

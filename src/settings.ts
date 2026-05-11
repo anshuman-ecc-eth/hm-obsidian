@@ -4,7 +4,7 @@ import type HyvmindPlugin from "./main";
 export interface HyvmindSettings {
   canisterId: string;
   host: string;
-  userName: string;
+
   userPrincipal: string;
   bindingData: string;
   principal: string | null;
@@ -13,7 +13,7 @@ export interface HyvmindSettings {
 export const DEFAULT_SETTINGS: HyvmindSettings = {
   canisterId: "4p5ty-yyaaa-aaaam-qfana-cai",
   host: "https://icp-api.io",
-  userName: "",
+
   userPrincipal: "",
   bindingData: "",
   principal: null,
@@ -61,19 +61,6 @@ export class HyvmindSettingTab extends PluginSettingTab {
           })
       );
 
-    new Setting(containerEl)
-      .setName("Display name")
-      .setDesc("Your display name for hyvmind")
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter your name")
-          .setValue(this.plugin.settings.userName)
-          .onChange((value) => {
-            this.plugin.settings.userName = value.trim();
-            void this.plugin.saveSettings();
-          })
-      );
-
     new Setting(containerEl).setHeading().setName("Plugin Binding");
 
     const descEl = containerEl.createEl("div", { cls: "hyvmind-auth-desc" });
@@ -112,12 +99,6 @@ export class HyvmindSettingTab extends PluginSettingTab {
       void this.handleRequestBinding();
     });
 
-    const openBtn = new ButtonComponent(btnContainer);
-    openBtn.setButtonText("Open hyvmind settings");
-    openBtn.onClick(() => {
-      window.open("https://hyvmind.app", "_blank");
-    });
-
     new Setting(containerEl)
       .setName("Binding status")
       .setDesc("Current binding state");
@@ -126,12 +107,6 @@ export class HyvmindSettingTab extends PluginSettingTab {
       cls: "hyvmind-token-status",
     });
     this.updateBindingStatus();
-
-    const refreshBtn = new ButtonComponent(btnContainer);
-    refreshBtn.setButtonText("Refresh status");
-    refreshBtn.onClick(() => {
-      void this.handleRefreshBinding();
-    });
 
     const clearBtn = new ButtonComponent(btnContainer);
     clearBtn.setButtonText("Clear local binding");
@@ -223,27 +198,6 @@ export class HyvmindSettingTab extends PluginSettingTab {
     } catch (err) {
       new Notice(
         `Failed to request binding: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
-  }
-
-  private async handleRefreshBinding(): Promise<void> {
-    try {
-      const isBound = await this.plugin.agent.getPluginBindingStatus();
-      if (isBound && this.plugin.settings.userPrincipal) {
-        this.plugin.binding.persistBoundUser(this.plugin.settings.userPrincipal);
-        this.plugin.settings.principal = this.plugin.settings.userPrincipal;
-        await this.plugin.saveSettings();
-        this.updateBindingStatus();
-        new Notice("Binding confirmed!");
-      } else if (isBound && !this.plugin.settings.userPrincipal) {
-        new Notice("Binding confirmed but no principal saved. Enter your principal and refresh.");
-      } else {
-        new Notice("No binding found. Send a request first.");
-      }
-    } catch (err) {
-      new Notice(
-        `Failed to check binding: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
