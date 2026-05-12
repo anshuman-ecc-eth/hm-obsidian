@@ -3,7 +3,6 @@ import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 import { Principal } from "@icp-sdk/core/principal";
 import { HyvmindActor } from "../types/canister";
 
-// eslint-disable-next-line no-undef
 const idlFactory = ({ IDL }: { IDL: IDL }) => {
   return IDL.Service({
     requestPluginBinding: IDL.Func([IDL.Principal, IDL.Principal], [], []),
