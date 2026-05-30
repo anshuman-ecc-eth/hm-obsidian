@@ -17,7 +17,7 @@ Upload Obsidian folders to [Hyvmind](https://hyvmind.app) ICP app as source grap
 
 ## Installation
 
-### From Obsidian Community Plugins (Coming Soon)
+### From Obsidian Community Plugins
 
 1. Open **Settings → Community Plugins**
 2. Turn off **Safe Mode**
@@ -38,7 +38,7 @@ Upload Obsidian folders to [Hyvmind](https://hyvmind.app) ICP app as source grap
 
 Open **Settings → Hyvmind Uploader** to configure:
 
-- **Canister ID** - The Hyvmind backend canister (default provided)
+- **Canister ID** - The Hyvmind backend canister (default: `4p5ty-yyaaa-aaaam-qfana-cai`)
 - **Identity Provider URL** - Internet Identity URL:
   - Mainnet: `https://id.ai`
   - Local: `http://id.ai.localhost:8000`
