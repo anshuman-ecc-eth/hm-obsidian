@@ -26,12 +26,13 @@ export class PluginBinding {
     const stored = this.storage.getBindingData();
     if (stored) {
       try {
-        const parsed: { identity?: string; boundUser?: string } = JSON.parse(stored) as { identity?: string; boundUser?: string };
-        if (parsed.identity) {
-          this.keyIdentity = Ed25519KeyIdentity.fromJSON(parsed.identity);
+        const raw: unknown = JSON.parse(stored);
+        const data = raw as Record<string, unknown>;
+        if (typeof data.identity === "string") {
+          this.keyIdentity = Ed25519KeyIdentity.fromJSON(data.identity);
         }
-        if (parsed.boundUser) {
-          this.boundUserPrincipal = parsed.boundUser;
+        if (typeof data.boundUser === "string") {
+          this.boundUserPrincipal = data.boundUser;
         }
       } catch {
         // Stored data is corrupt, generate fresh

@@ -8,7 +8,7 @@ export class ConnectionStatusBar {
   private principal: string | null = null;
 
   constructor(container: HTMLElement) {
-    this.element = container.createEl("span", {
+    this.element = container.createSpan({
       cls: "hyvmind-status-bar",
     });
     this.updateDisplay();

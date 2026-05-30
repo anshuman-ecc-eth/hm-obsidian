@@ -63,7 +63,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     new Setting(containerEl).setHeading().setName("Plugin binding");
 
-    const descEl = containerEl.createEl("div", { cls: "hyvmind-auth-desc" });
+    const descEl = containerEl.createDiv({ cls: "hyvmind-auth-desc" });
     descEl.createEl("p", {
       text: "Link this plugin to your hyvmind account so uploads appear in your notes.",
     });
@@ -103,7 +103,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
       .setName("Binding status")
       .setDesc("Current binding state");
 
-    this.bindingStatusEl = containerEl.createEl("div", {
+    this.bindingStatusEl = containerEl.createDiv({
       cls: "hyvmind-token-status",
     });
     this.updateBindingStatus();
@@ -218,7 +218,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
       .setName("Stale plugin keys")
       .setDesc("Old plugin keys still bound to your account on the backend");
 
-    this.staleBindingsEl = containerEl.createEl("div", {
+    this.staleBindingsEl = containerEl.createDiv({
       cls: "hyvmind-token-status",
     });
     this.staleBindingsEl.setText("Click 'check stale bindings' above");
@@ -235,14 +235,14 @@ export class HyvmindSettingTab extends PluginSettingTab {
       this.staleBindingsEl.empty();
 
       if (staleKeys.length === 0) {
-        const span = this.staleBindingsEl.createEl("span", { cls: "hyvmind-status hyvmind-status-valid" });
+        const span = this.staleBindingsEl.createSpan({ cls: "hyvmind-status hyvmind-status-valid" });
         span.setText("No stale bindings found");
         return;
       }
 
       for (const key of staleKeys) {
         const row = this.staleBindingsEl.createDiv({ cls: "hyvmind-stale-key-row" });
-        row.createEl("span", {
+        row.createSpan({
           text: key.slice(0, 16) + "...",
           cls: "hyvmind-stale-key-text",
           attr: { title: key },
@@ -276,7 +276,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
   private updateBindingStatus(): void {
     this.bindingStatusEl.empty();
-    const span = this.bindingStatusEl.createEl("span", { cls: "hyvmind-status" });
+    const span = this.bindingStatusEl.createSpan({ cls: "hyvmind-status" });
 
     if (this.plugin.binding.isBound()) {
       span.addClass("hyvmind-status-valid");

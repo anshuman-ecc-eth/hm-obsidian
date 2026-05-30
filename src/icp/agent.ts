@@ -22,14 +22,22 @@ const idlFactory = ({ IDL }: { IDL: IDL }) => {
   });
 };
 
+interface HasToText {
+  toText(): string;
+}
+
+function isHasToText(p: unknown): p is HasToText {
+  return typeof p === "object" && p !== null && typeof (p as HasToText).toText === "function";
+}
+
 function toText(p: unknown): string {
-  if (p && typeof (p as { toText(): string }).toText === "function") return (p as { toText(): string }).toText();
+  if (isHasToText(p)) return p.toText();
   return String(p);
 }
 
 function getRootKey(): Uint8Array | undefined {
   try {
-    const cookies = document.cookie.split(";");
+    const cookies = window.document.cookie.split(";");
     for (const cookie of cookies) {
       const [name, value] = cookie.trim().split("=");
       if (name === "IC_ROOT_KEY" && value) {

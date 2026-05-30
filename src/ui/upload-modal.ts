@@ -24,11 +24,11 @@ export class UploadProgressModal extends Modal {
     this.statusEl.setAttribute("aria-live", "polite");
     this.statusEl.setAttribute("aria-atomic", "true");
 
-    this.progressEl = contentEl.createEl("div", {
+    this.progressEl = contentEl.createDiv({
       cls: "hyvmind-progress-bar",
     });
 
-    const progressFill = this.progressEl.createEl("div", {
+    const progressFill = this.progressEl.createDiv({
       cls: "hyvmind-progress-fill",
     });
     progressFill.setAttribute("role", "progressbar");
