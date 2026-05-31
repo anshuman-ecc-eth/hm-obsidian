@@ -23,6 +23,13 @@
 1. After successful binding, you will see a green dot in Obsidian's bottom right corner.
 2. Right-click any folder and select **'Upload to Hyvmind'**.
 3. Follow Hyvmind's 4 folder structure for best results.
+   - For top-level folders, use broad categories, e.g. "Indian Constitution Law", "Chinese Administrative Law", "American Contract Law" etc.
+   - For second-level folders, use topics/themes that may interest others, e.g. "Fundamental Rights", "Fundamental Duties" etc.
+   - For third-level folders, use articles, sections, paragraphs like "Article 14", "Section 138", "Para 14.3" etc.
+   - For fourth-level folders, use precise legal language, e.g. "equality before the law".
+   - Place your interpretations as files within the fourth subfolder, e.g. "arbitrariness".
+   - The app will identify your folders as Curations, Swarms, Locations, Law Entities and your files as Interpretation Entities.
+
 4. Add attributes to any folder by creating an `_attributes.md` file. These will be automatically applied to child nodes.
 5. Add sources to any folder by creating a `_sources.md` file. These will be automatically applied to child nodes.
 
