@@ -15,7 +15,7 @@
 3. Paste it in the "Plugin Binding" section, and click **Request**.
 4. Refresh your app's **Settings** page and wait for a few seconds.
 5. Approve the Pending Request.
-6. Back in the **Options** popup, click **'Confirm Manually'**.
+6. Back in the **Options** popup, click **'Confirm'**.
 7. Close and Restart Obsidian.
 
 ## How to Use

@@ -48,10 +48,6 @@
    Settings Tab Styles
    ======================================== */
 
-.hyvmind-preset-container {
-  margin-top: 1rem;
-}
-
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .hyvmind-progress-bar {
