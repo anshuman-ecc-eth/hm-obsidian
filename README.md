@@ -29,7 +29,6 @@
    - For fourth-level folders, use precise legal language, e.g. "equality before the law".
    - Place your interpretations as files within the fourth subfolder, e.g. "arbitrariness".
    - The app will identify your folders as Curations, Swarms, Locations, Law Entities and your files as Interpretation Entities.
-
 4. Add attributes to any folder by creating an `_attributes.md` file. These will be automatically applied to child nodes.
 5. Add sources to any folder by creating a `_sources.md` file. These will be automatically applied to child nodes.
 
