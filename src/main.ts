@@ -62,7 +62,7 @@ export default class HyvmindPlugin extends Plugin {
 
     this.addCommand({
       id: "upload-current-folder",
-      name: "Upload current folder to hyvmind",
+      name: "Upload current folder to Hyvmind",
       checkCallback: (checking: boolean) => {
         const file = this.app.workspace.getActiveFile();
         if (file) {
@@ -83,7 +83,7 @@ export default class HyvmindPlugin extends Plugin {
         if (abstractFile instanceof TFolder) {
           menu.addItem((item) => {
             item
-              .setTitle("Upload to hyvmind")
+              .setTitle("Upload to Hyvmind")
               .setIcon("upload-cloud")
               .onClick(() => {
                 void this.uploadFolder(abstractFile);
@@ -110,7 +110,7 @@ export default class HyvmindPlugin extends Plugin {
 
   private async uploadFolder(folder: TFolder): Promise<void> {
     if (!this.binding.isBound()) {
-      new Notice("Please bind the plugin to your hyvmind account in settings first");
+      new Notice("Please bind the plugin to your Hyvmind account in settings first");
       return;
     }
 
@@ -189,7 +189,7 @@ export default class HyvmindPlugin extends Plugin {
           .setTitle("Configure binding in settings")
           .setIcon("settings")
           .onClick(() => {
-            new Notice("Please bind the plugin in hyvmind settings first");
+            new Notice("Please bind the plugin in Hyvmind settings first");
           })
       );
     }

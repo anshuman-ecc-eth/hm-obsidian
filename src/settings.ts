@@ -36,7 +36,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Canister ID")
-      .setDesc("The canister ID of the hyvmind backend")
+      .setDesc("The canister ID of the Hyvmind backend")
       .addText((text) =>
         text
           .setPlaceholder("Enter canister ID")
@@ -64,12 +64,12 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     const descEl = containerEl.createDiv({ cls: "hyvmind-auth-desc" });
     descEl.createEl("p", {
-      text: "Link this plugin to your hyvmind account so uploads appear in your notes.",
+      text: "Link this plugin to your Hyvmind account so uploads appear in your notes.",
     });
 
     new Setting(containerEl)
-      .setName("Your hyvmind principal")
-      .setDesc("Copy this from hyvmind.app settings → plugin binding")
+      .setName("Your Hyvmind principal")
+      .setDesc("Copy this from Hyvmind.app settings → plugin binding")
       .addText((text) =>
         text
           .setPlaceholder("Your principal ID")
@@ -138,7 +138,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
     manualBindBtn.onClick(() => {
       const principal = this.plugin.settings.userPrincipal;
       if (!principal) {
-        new Notice("Enter your hyvmind principal first");
+        new Notice("Enter your Hyvmind principal first");
         return;
       }
       this.plugin.binding.persistBoundUser(principal);
@@ -153,7 +153,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
   private async handleRequestBinding(): Promise<void> {
     const userPrincipal = this.plugin.settings.userPrincipal;
     if (!userPrincipal) {
-      new Notice("Please enter your hyvmind principal first");
+      new Notice("Please enter your Hyvmind principal first");
       return;
     }
 
@@ -168,7 +168,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
         identity.getPrincipal().toText(),
         userPrincipal,
       );
-      new Notice("Binding request sent! Approve it in hyvmind.app settings");
+      new Notice("Binding request sent! Approve it in Hyvmind.app settings");
     } catch (err) {
       new Notice(
         `Failed to request binding: ${err instanceof Error ? err.message : String(err)}`

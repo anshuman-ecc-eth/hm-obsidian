@@ -14,7 +14,7 @@ export class UploadProgressModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h2", { text: `Uploading to hyvmind` });
+    contentEl.createEl("h2", { text: `Uploading to Hyvmind` });
     contentEl.createEl("p", { text: `Folder: ${this.folderName}` });
 
     this.statusEl = contentEl.createEl("p", {
