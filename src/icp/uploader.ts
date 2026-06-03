@@ -75,7 +75,7 @@ export class FolderUploader {
         children.push(sub);
       } else if (child instanceof TFile && child.extension === "md") {
         const content = await this.vault.cachedRead(child);
-        children.push({ name: child.basename, content });
+        children.push({ name: child.name, content });
       }
     }
 
