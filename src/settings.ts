@@ -79,6 +79,18 @@ export class HyvmindSettingTab extends PluginSettingTab {
           })
       );
 
+    new Setting(containerEl)
+      .setName("Download notes")
+      .setDesc("Import your notes from Hyvmind into the folder above")
+      .addButton((btn) =>
+        btn
+          .setButtonText("Download now")
+          .setCta()
+          .onClick(() => {
+            void this.plugin.downloadFromHyvmind();
+          })
+      );
+
     new Setting(containerEl).setHeading().setName("Plugin binding");
 
     const descEl = containerEl.createDiv({ cls: "hyvmind-auth-desc" });

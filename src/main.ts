@@ -148,7 +148,7 @@ export default class HyvmindPlugin extends Plugin {
     }
   }
 
-  private async downloadFromHyvmind(): Promise<void> {
+  async downloadFromHyvmind(): Promise<void> {
     if (!this.binding.isBound()) {
       new Notice("Please bind the plugin to your Hyvmind account in settings first");
       return;
