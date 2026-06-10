@@ -1,4 +1,4 @@
-import { Vault } from "obsidian";
+import { Vault, normalizePath } from "obsidian";
 import { ICPAgent } from "./agent";
 
 interface FolderItem {
@@ -56,7 +56,7 @@ export class FolderDownloader {
       });
 
       try {
-        await this.vault.createFolder(importFolderName);
+        await this.vault.adapter.mkdir(normalizePath(importFolderName));
       } catch {
         // Folder already exists
       }
@@ -111,7 +111,7 @@ export class FolderDownloader {
 
     if (item.folders && item.folders.length > 0) {
       try {
-        await this.vault.createFolder(itemPath);
+        await this.vault.adapter.mkdir(normalizePath(itemPath));
       } catch {
         // Folder already exists, skip
       }
