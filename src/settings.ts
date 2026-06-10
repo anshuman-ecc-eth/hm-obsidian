@@ -128,8 +128,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
 
     const clearBtn = new ButtonComponent(btnContainer);
     clearBtn.setButtonText("Clear");
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    clearBtn.setWarning();
+    clearBtn.buttonEl.classList.add("mod-warning");
     clearBtn.onClick(() => {
       this.plugin.binding.clearBinding();
       this.plugin.settings.principal = null;
