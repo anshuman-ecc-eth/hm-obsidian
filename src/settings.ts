@@ -8,6 +8,8 @@ export interface HyvmindSettings {
   userPrincipal: string;
   bindingData: string;
   principal: string | null;
+
+  importFolderName: string;
 }
 
 export const DEFAULT_SETTINGS: HyvmindSettings = {
@@ -17,6 +19,8 @@ export const DEFAULT_SETTINGS: HyvmindSettings = {
   userPrincipal: "",
   bindingData: "",
   principal: null,
+
+  importFolderName: "Hyvmind",
 };
 
 export class HyvmindSettingTab extends PluginSettingTab {
@@ -56,6 +60,21 @@ export class HyvmindSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.host)
           .onChange((value) => {
             this.plugin.settings.host = value.trim();
+            void this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl).setHeading().setName("Import");
+
+    new Setting(containerEl)
+      .setName("Import folder name")
+      .setDesc("Folder name in vault root where downloaded notes will be placed")
+      .addText((text) =>
+        text
+          .setPlaceholder("Hyvmind")
+          .setValue(this.plugin.settings.importFolderName)
+          .onChange((value) => {
+            this.plugin.settings.importFolderName = value.trim() || "Hyvmind";
             void this.plugin.saveSettings();
           })
       );

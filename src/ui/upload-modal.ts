@@ -1,21 +1,23 @@
 import { App, Modal } from "obsidian";
 
 export class UploadProgressModal extends Modal {
-  private folderName: string;
+  private titleText: string;
+  private subtitleText: string;
   private progressEl!: HTMLElement;
   private statusEl!: HTMLElement;
 
-  constructor(app: App, folderName: string) {
+  constructor(app: App, subtitle: string, title?: string) {
     super(app);
-    this.folderName = folderName;
+    this.titleText = title ?? "Hyvmind Sync";
+    this.subtitleText = subtitle;
   }
 
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl("h2", { text: `Uploading to Hyvmind` });
-    contentEl.createEl("p", { text: `Folder: ${this.folderName}` });
+    contentEl.createEl("h2", { text: this.titleText });
+    contentEl.createEl("p", { text: this.subtitleText });
 
     this.statusEl = contentEl.createEl("p", {
       text: "Initializing...",
@@ -35,7 +37,7 @@ export class UploadProgressModal extends Modal {
     progressFill.setAttribute("aria-valuenow", "0");
     progressFill.setAttribute("aria-valuemin", "0");
     progressFill.setAttribute("aria-valuemax", "100");
-    progressFill.setAttribute("aria-label", "Upload progress");
+    progressFill.setAttribute("aria-label", "Sync progress");
   }
 
   updateProgress(progress: {

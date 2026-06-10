@@ -3,6 +3,7 @@ import { HyvmindSettings, DEFAULT_SETTINGS, HyvmindSettingTab } from "./settings
 import { PluginBinding, BindingStorage } from "./icp/auth";
 import { ICPAgent } from "./icp/agent";
 import { FolderUploader } from "./icp/uploader";
+import { FolderDownloader } from "./icp/downloader";
 import { ConnectionStatusBar } from "./ui/status-bar";
 import { UploadProgressModal } from "./ui/upload-modal";
 
@@ -30,6 +31,7 @@ export default class HyvmindPlugin extends Plugin {
   binding!: PluginBinding;
   agent!: ICPAgent;
   uploader!: FolderUploader;
+  downloader!: FolderDownloader;
   statusBar!: ConnectionStatusBar;
 
   async onload() {
@@ -39,6 +41,7 @@ export default class HyvmindPlugin extends Plugin {
     this.binding = new PluginBinding(bindingStorage);
     this.agent = new ICPAgent(this.settings.canisterId, this.settings.host);
     this.uploader = new FolderUploader(this.app.vault, this.agent);
+    this.downloader = new FolderDownloader(this.app.vault, this.agent);
 
     const identity = this.binding.getOrCreateIdentity();
     await this.agent.createAuthenticatedActor(identity);
@@ -78,6 +81,14 @@ export default class HyvmindPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "download-from-hyvmind",
+      name: "Download notes from Hyvmind",
+      callback: () => {
+        void this.downloadFromHyvmind();
+      },
+    });
+
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, abstractFile: TAbstractFile) => {
         if (abstractFile instanceof TFolder) {
@@ -114,7 +125,7 @@ export default class HyvmindPlugin extends Plugin {
       return;
     }
 
-    const progressModal = new UploadProgressModal(this.app, folder.name);
+    const progressModal = new UploadProgressModal(this.app, folder.name, "Uploading to Hyvmind");
     progressModal.open();
 
     try {
@@ -134,6 +145,41 @@ export default class HyvmindPlugin extends Plugin {
       progressModal.close();
       console.error("Upload failed:", error);
       new Notice(`Upload failed: ${this.sanitizeForNotice(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  private async downloadFromHyvmind(): Promise<void> {
+    if (!this.binding.isBound()) {
+      new Notice("Please bind the plugin to your Hyvmind account in settings first");
+      return;
+    }
+
+    const progressModal = new UploadProgressModal(
+      this.app,
+      `Folder: ${this.settings.importFolderName}`,
+      "Downloading from Hyvmind"
+    );
+    progressModal.open();
+
+    try {
+      const result = await this.downloader.downloadFolder(
+        this.settings.importFolderName,
+        (progress) => {
+          progressModal.updateProgress(progress);
+        }
+      );
+
+      progressModal.close();
+
+      if (result.success) {
+        new Notice(`✓ ${result.message}`);
+      } else {
+        new Notice(`✗ ${result.message}`);
+      }
+    } catch (error) {
+      progressModal.close();
+      console.error("Download failed:", error);
+      new Notice(`Download failed: ${this.sanitizeForNotice(error instanceof Error ? error.message : String(error))}`);
     }
   }
 
