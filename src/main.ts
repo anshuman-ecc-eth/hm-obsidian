@@ -229,6 +229,15 @@ export default class HyvmindPlugin extends Plugin {
             }
           })
       );
+
+      menu.addItem((item) =>
+        item
+          .setTitle("Download notes from Hyvmind")
+          .setIcon("download")
+          .onClick(() => {
+            void this.downloadFromHyvmind();
+          })
+      );
     } else {
       menu.addItem((item) =>
         item
