@@ -90,14 +90,6 @@ export default class HyvmindPlugin extends Plugin {
       },
     });
 
-    this.addCommand({
-      id: "download-from-hyvmind",
-      name: "Download notes from Hyvmind",
-      callback: () => {
-        void this.downloadFromHyvmind();
-      },
-    });
-
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu: Menu, abstractFile: TAbstractFile) => {
         if (abstractFile instanceof TFolder) {
@@ -154,41 +146,6 @@ export default class HyvmindPlugin extends Plugin {
       progressModal.close();
       console.error("Upload failed:", error);
       new Notice(`Upload failed: ${this.sanitizeForNotice(error instanceof Error ? error.message : String(error))}`);
-    }
-  }
-
-  async downloadFromHyvmind(): Promise<void> {
-    if (!this.binding.isBound()) {
-      new Notice("Please bind the plugin to your Hyvmind account in settings first");
-      return;
-    }
-
-    const progressModal = new UploadProgressModal(
-      this.app,
-      `Folder: ${this.settings.importFolderName}`,
-      "Downloading from Hyvmind"
-    );
-    progressModal.open();
-
-    try {
-      const result = await this.downloader.downloadFolder(
-        this.settings.importFolderName,
-        (progress) => {
-          progressModal.updateProgress(progress);
-        }
-      );
-
-      progressModal.close();
-
-      if (result.success) {
-        new Notice(`✓ ${result.message}`);
-      } else {
-        new Notice(`✗ ${result.message}`);
-      }
-    } catch (error) {
-      progressModal.close();
-      console.error("Download failed:", error);
-      new Notice(`Download failed: ${this.sanitizeForNotice(error instanceof Error ? error.message : String(error))}`);
     }
   }
 
@@ -253,14 +210,6 @@ export default class HyvmindPlugin extends Plugin {
           })
       );
 
-      menu.addItem((item) =>
-        item
-          .setTitle("Download notes from Hyvmind")
-          .setIcon("download")
-          .onClick(() => {
-            void this.downloadFromHyvmind();
-          })
-      );
     } else {
       menu.addItem((item) =>
         item

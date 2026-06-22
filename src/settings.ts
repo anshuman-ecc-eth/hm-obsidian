@@ -67,7 +67,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
     new Setting(containerEl).setHeading().setName("Import");
 
     new Setting(containerEl)
-      .setName("Import folder name")
+      .setName("Import Folder")
       .setDesc("Folder name in vault root where downloaded notes will be placed")
       .addText((text) =>
         text
@@ -76,18 +76,6 @@ export class HyvmindSettingTab extends PluginSettingTab {
           .onChange((value) => {
             this.plugin.settings.importFolderName = value.trim() || "Hyvmind";
             void this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName("Download notes")
-      .setDesc("Import your notes from Hyvmind into the folder above")
-      .addButton((btn) =>
-        btn
-          .setButtonText("Download now")
-          .setCta()
-          .onClick(() => {
-            void this.plugin.downloadFromHyvmind();
           })
       );
 

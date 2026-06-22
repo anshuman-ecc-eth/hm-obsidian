@@ -16,70 +16,6 @@ export class FolderDownloader {
     this.agent = agent;
   }
 
-  async downloadFolder(
-    importFolderName: string,
-    onProgress?: (progress: {
-      totalFiles: number;
-      processedFiles: number;
-      currentFile: string;
-      stage: string;
-    }) => void
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      onProgress?.({
-        totalFiles: 0,
-        processedFiles: 0,
-        currentFile: "Downloading from Hyvmind...",
-        stage: "downloading",
-      });
-
-      const json = await this.agent.getNotesData();
-      if (!json) {
-        return { success: true, message: "No notes found on Hyvmind" };
-      }
-
-      const data = JSON.parse(json) as { folders: FolderItem[] };
-      if (!data.folders || data.folders.length === 0) {
-        return { success: true, message: "No notes found on Hyvmind" };
-      }
-
-      const allFiles = data.folders.reduce(
-        (sum, item) => sum + this.countFiles(item),
-        0
-      );
-
-      onProgress?.({
-        totalFiles: allFiles,
-        processedFiles: 0,
-        currentFile: "Writing files...",
-        stage: "downloading",
-      });
-
-      try {
-        await this.vault.adapter.mkdir(normalizePath(importFolderName));
-      } catch {
-        // Folder already exists
-      }
-
-      const counter = { processed: 0 };
-      for (const item of data.folders) {
-        await this.createItem(importFolderName, item, counter, allFiles, onProgress);
-      }
-
-      await this.agent.storeNotesData("");
-
-      return {
-        success: true,
-        message: `Downloaded ${allFiles} files from Hyvmind into "${importFolderName}"`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Download failed: ${error instanceof Error ? error.message : String(error)}`,
-      };
-    }
-  }
-
   async processPendingPush(json: string, importFolderName: string): Promise<void> {
     const data = JSON.parse(json) as { folders: FolderItem[] };
     if (!data.folders || data.folders.length === 0) return;
@@ -137,14 +73,4 @@ export class FolderDownloader {
     }
   }
 
-  private countFiles(item: FolderItem): number {
-    let count = 0;
-    for (const child of item.folders ?? []) {
-      if (child.content !== undefined) {
-        count++;
-      }
-      count += this.countFiles(child);
-    }
-    return count;
-  }
 }
