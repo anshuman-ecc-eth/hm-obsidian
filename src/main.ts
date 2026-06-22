@@ -53,6 +53,15 @@ export default class HyvmindPlugin extends Plugin {
       void this.checkBindingStatus();
     }
 
+    // Poll every 30s for pushed notes from the web app.
+    // hasPendingVaultPush is a cheap query (~200ms);
+    // getAndClearPendingVaultPush goes through consensus (~2s).
+    this.registerInterval(
+      window.setInterval(() => {
+        void this.pollForPushNotes();
+      }, 30000)
+    );
+
     this.addSettingTab(new HyvmindSettingTab(this.app, this));
 
     const statusBarItem = this.addStatusBarItem();
@@ -205,6 +214,20 @@ export default class HyvmindPlugin extends Plugin {
       }
     } catch {
       // Actor not ready or network error — will retry on next load
+    }
+  }
+
+  private async pollForPushNotes(): Promise<void> {
+    if (!this.binding.isBound()) return;
+    try {
+      const hasPending = await this.agent.hasPendingVaultPush();
+      if (!hasPending) return;
+      const json = await this.agent.getAndClearPendingVaultPush();
+      if (!json) return;
+      await this.downloader.processPendingPush(json, this.settings.importFolderName);
+      new Notice("New notes synced from Hyvmind");
+    } catch (err) {
+      console.error("Polling for pushed notes failed:", err);
     }
   }
 

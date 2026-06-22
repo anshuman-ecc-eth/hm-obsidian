@@ -14,6 +14,9 @@ const idlFactory = ({ IDL }: { IDL: IDL }) => {
     getMyPrincipal: IDL.Func([], [IDL.Principal], ["query"]),
     storeNotesData: IDL.Func([IDL.Text], [], []),
     getNotesData: IDL.Func([], [IDL.Opt(IDL.Text)], ["query"]),
+    pushToVault: IDL.Func([IDL.Text], [], []),
+    hasPendingVaultPush: IDL.Func([], [IDL.Bool], ["query"]),
+    getAndClearPendingVaultPush: IDL.Func([], [IDL.Opt(IDL.Text)], []),
     initializeAccessControl: IDL.Func([], [], []),
     isCallerApproved: IDL.Func([], [IDL.Bool], ["query"]),
     requestApproval: IDL.Func([], [], []),
@@ -159,5 +162,21 @@ export class ICPAgent {
   async getUserProfile(): Promise<{ name: string; socialUrl: string | null } | null> {
     if (!this.actor) throw new Error("Actor not initialized");
     return await this.actor.getCallerUserProfile();
+  }
+
+  async pushToVault(json: string): Promise<void> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    await this.actor.pushToVault(json);
+  }
+
+  async hasPendingVaultPush(): Promise<boolean> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    return await this.actor.hasPendingVaultPush();
+  }
+
+  async getAndClearPendingVaultPush(): Promise<string | null> {
+    if (!this.actor) throw new Error("Actor not initialized");
+    const result = await this.actor.getAndClearPendingVaultPush();
+    return result ?? null;
   }
 }

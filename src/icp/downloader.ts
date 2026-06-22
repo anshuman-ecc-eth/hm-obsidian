@@ -80,6 +80,22 @@ export class FolderDownloader {
     }
   }
 
+  async processPendingPush(json: string, importFolderName: string): Promise<void> {
+    const data = JSON.parse(json) as { folders: FolderItem[] };
+    if (!data.folders || data.folders.length === 0) return;
+
+    try {
+      await this.vault.adapter.mkdir(normalizePath(importFolderName));
+    } catch {
+      // Folder already exists
+    }
+
+    const counter = { processed: 0 };
+    for (const item of data.folders) {
+      await this.createItem(importFolderName, item, counter, 0);
+    }
+  }
+
   private async createItem(
     parentPath: string,
     item: FolderItem,

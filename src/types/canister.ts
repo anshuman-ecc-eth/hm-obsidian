@@ -23,4 +23,7 @@ export interface HyvmindActor {
   requestApproval(): Promise<void>;
   getCallerUserProfile(): Promise<{ name: string; socialUrl: string | null } | null>;
   saveCallerUserProfile(profile: { name: string; socialUrl: string | null }): Promise<void>;
+  pushToVault(json: string): Promise<void>;
+  hasPendingVaultPush(): Promise<boolean>;
+  getAndClearPendingVaultPush(): Promise<string | null>;
 }
