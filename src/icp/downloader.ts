@@ -61,7 +61,7 @@ export class FolderDownloader {
       });
     }
 
-    if (item.folders && item.folders.length > 0) {
+    if (item.folders !== undefined) {
       try {
         await this.vault.adapter.mkdir(normalizePath(itemPath));
       } catch {
