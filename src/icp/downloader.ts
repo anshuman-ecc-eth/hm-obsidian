@@ -1,4 +1,4 @@
-import { Vault, normalizePath } from "obsidian";
+import { Vault, TFolder, normalizePath } from "obsidian";
 import { ICPAgent } from "./agent";
 
 interface FolderItem {
@@ -30,7 +30,7 @@ export class FolderDownloader {
 
   private async ensureFolderExists(path: string): Promise<void> {
     const normalized = normalizePath(path);
-    if (this.vault.getFolderByPath(normalized)) return;
+    if (this.vault.getAbstractFileByPath(normalized) instanceof TFolder) return;
     const parent = normalized.substring(0, normalized.lastIndexOf("/"));
     if (parent && parent !== normalized) {
       await this.ensureFolderExists(parent);

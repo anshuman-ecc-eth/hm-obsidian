@@ -2,7 +2,7 @@
 	"id": "hyvmind-uploader",
 	"name": "Hyvmind Uploader",
 	"version": "2.2.3",
-	"minAppVersion": "1.2.3",
+	"minAppVersion": "1.4.0",
 	"description": "Upload folders to Hyvmind ICP app as source graphs.",
 	"author": "Hyvmind",
 	"authorUrl": "https://hyvmind.app",
