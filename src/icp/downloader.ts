@@ -35,7 +35,14 @@ export class FolderDownloader {
     if (parent && parent !== normalized) {
       await this.ensureFolderExists(parent);
     }
-    await this.vault.createFolder(normalized);
+    try {
+      await this.vault.createFolder(normalized);
+    } catch (err) {
+      if (err instanceof Error && err.message.toLowerCase().includes("already exists")) {
+        return;
+      }
+      throw err;
+    }
   }
 
   private async createItem(
