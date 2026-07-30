@@ -20,16 +20,22 @@ export class FolderDownloader {
     const data = JSON.parse(json) as { folders: FolderItem[] };
     if (!data.folders || data.folders.length === 0) return;
 
-    try {
-      await this.vault.adapter.mkdir(normalizePath(importFolderName));
-    } catch {
-      // Folder already exists
-    }
+    await this.ensureFolderExists(importFolderName);
 
     const counter = { processed: 0 };
     for (const item of data.folders) {
       await this.createItem(importFolderName, item, counter, 0);
     }
+  }
+
+  private async ensureFolderExists(path: string): Promise<void> {
+    const normalized = normalizePath(path);
+    if (this.vault.getFolderByPath(normalized)) return;
+    const parent = normalized.substring(0, normalized.lastIndexOf("/"));
+    if (parent && parent !== normalized) {
+      await this.ensureFolderExists(parent);
+    }
+    await this.vault.createFolder(normalized);
   }
 
   private async createItem(
@@ -44,9 +50,13 @@ export class FolderDownloader {
       stage: string;
     }) => void
   ): Promise<void> {
-    const itemPath = `${parentPath}/${item.name}`;
+    const itemPath = normalizePath(`${parentPath}/${item.name}`);
 
     if (item.content !== undefined) {
+      const parentDir = itemPath.substring(0, itemPath.lastIndexOf("/"));
+      if (parentDir) {
+        await this.ensureFolderExists(parentDir);
+      }
       try {
         await this.vault.create(itemPath, item.content);
       } catch {
@@ -62,11 +72,7 @@ export class FolderDownloader {
     }
 
     if (item.folders !== undefined) {
-      try {
-        await this.vault.adapter.mkdir(normalizePath(itemPath));
-      } catch {
-        // Folder already exists, skip
-      }
+      await this.ensureFolderExists(itemPath);
       for (const child of item.folders) {
         await this.createItem(itemPath, child, counter, totalFiles, onProgress);
       }
