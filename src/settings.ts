@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, ButtonComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice, ButtonComponent, type SettingDefinitionItem } from "obsidian";
 import type HyvmindPlugin from "./main";
 
 export interface HyvmindSettings {
@@ -25,11 +25,14 @@ export const DEFAULT_SETTINGS: HyvmindSettings = {
 
 export class HyvmindSettingTab extends PluginSettingTab {
   plugin: HyvmindPlugin;
-  private bindingStatusEl!: HTMLElement;
 
   constructor(app: App, plugin: HyvmindPlugin) {
     super(app, plugin);
     this.plugin = plugin;
+  }
+
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [];
   }
 
   display(): void {
@@ -121,10 +124,10 @@ export class HyvmindSettingTab extends PluginSettingTab {
       .setName("Binding status")
       .setDesc("Current binding state");
 
-    this.bindingStatusEl = containerEl.createDiv({
+    const bindingStatusEl = containerEl.createDiv({
       cls: "hyvmind-token-status",
     });
-    this.updateBindingStatus();
+    updateBindingStatus(this.plugin, bindingStatusEl);
 
     const clearBtn = new ButtonComponent(btnContainer);
     clearBtn.setButtonText("Clear");
@@ -133,7 +136,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
       this.plugin.binding.clearBinding();
       this.plugin.settings.principal = null;
       void this.plugin.saveSettings();
-      this.updateBindingStatus();
+      updateBindingStatus(this.plugin, bindingStatusEl);
       new Notice("Local binding cleared (identity preserved)");
     });
 
@@ -163,7 +166,7 @@ export class HyvmindSettingTab extends PluginSettingTab {
       this.plugin.binding.persistBoundUser(principal);
       this.plugin.settings.principal = principal;
       void this.plugin.saveSettings();
-      this.updateBindingStatus();
+      updateBindingStatus(this.plugin, bindingStatusEl);
       new Notice("Binding confirmed manually");
     });
 
@@ -203,18 +206,18 @@ export class HyvmindSettingTab extends PluginSettingTab {
       cls: "hyvmind-privacy-notice",
     });
   }
+}
 
-  private updateBindingStatus(): void {
-    this.bindingStatusEl.empty();
-    const span = this.bindingStatusEl.createSpan({ cls: "hyvmind-status" });
+function updateBindingStatus(plugin: HyvmindPlugin, el: HTMLElement): void {
+  el.empty();
+  const span = el.createSpan({ cls: "hyvmind-status" });
 
-    if (this.plugin.binding.isBound()) {
-      span.addClass("hyvmind-status-valid");
-      const boundUser = this.plugin.binding.getBoundUser();
-      span.setText(`Bound to ${boundUser ? boundUser.slice(0, 8) + "..." : "user"}`);
-    } else {
-      span.addClass("hyvmind-status-none");
-      span.setText("Not bound");
-    }
+  if (plugin.binding.isBound()) {
+    span.addClass("hyvmind-status-valid");
+    const boundUser = plugin.binding.getBoundUser();
+    span.setText(`Bound to ${boundUser ? boundUser.slice(0, 8) + "..." : "user"}`);
+  } else {
+    span.addClass("hyvmind-status-none");
+    span.setText("Not bound");
   }
 }
